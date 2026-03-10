@@ -141,3 +141,32 @@ class PaginatedAuditLog(BaseModel):
     limit: int
     offset: int
     items: List[AuditLogEntryRead]
+
+
+# ---------------------------------------------------------------------------
+# Dashboard schemas
+# ---------------------------------------------------------------------------
+
+class DashboardPartitionEntry(BaseModel):
+    """Summary entry for a single partition on the dashboard."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    description: Optional[str] = None
+    location_id: Optional[uuid.UUID] = None
+    state: Optional[str] = None
+    # How many minutes the partition has been disarmed (None if not disarmed).
+    disarmed_minutes: Optional[float] = None
+    # True when alert_if_disarmed_minutes is set and threshold has been exceeded.
+    overdue: bool = False
+    scheduled_rearm_at: Optional[datetime] = None
+    last_changed_at: Optional[datetime] = None
+    last_changed_by: Optional[str] = None
+
+
+class DashboardResponse(BaseModel):
+    """Aggregated dashboard view of all non-deleted partitions."""
+    partitions: List[DashboardPartitionEntry]
+    total: int
+    active_count: int  # partitions in error / partial / disarmed state

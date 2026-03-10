@@ -34,6 +34,8 @@ from app.partitions.schemas import (
     PartitionStateRead,
     AuditLogEntryRead,
     PaginatedAuditLog,
+    DashboardPartitionEntry,
+    DashboardResponse,
 )
 
 
@@ -733,6 +735,67 @@ async def get_partition_state(
         scheduled_rearm_at=state.scheduled_rearm_at if state else None,
         error_detail=state.error_detail if state else None,
         cameras=cameras_out,
+    )
+
+
+async def get_dashboard(db: AsyncSession) -> DashboardResponse:
+    """Return an aggregated dashboard view of all non-deleted partitions.
+
+    - Calculates disarmed_minutes at request time for partitions in state 'disarmed' or 'partial'.
+    - Sets overdue=True when alert_if_disarmed_minutes is configured and exceeded.
+    - Sorts active partitions (error / partial / disarmed) before armed ones.
+    """
+    stmt = (
+        select(Partition, PartitionState)
+        .outerjoin(PartitionState, PartitionState.partition_id == Partition.id)
+        .where(Partition.deleted_at.is_(None))
+        .order_by(Partition.created_at)
+    )
+    result = await db.execute(stmt)
+    rows = result.all()
+
+    _ACTIVE_STATES = {"error", "partial", "disarmed"}
+
+    now = datetime.now(timezone.utc)
+    entries: list[DashboardPartitionEntry] = []
+
+    for partition, state in rows:
+        current_state = state.state if state else None
+
+        disarmed_minutes: Optional[float] = None
+        overdue: bool = False
+
+        if current_state in ("disarmed", "partial") and state and state.last_changed_at:
+            elapsed = now - state.last_changed_at
+            disarmed_minutes = elapsed.total_seconds() / 60.0
+
+            if partition.alert_if_disarmed_minutes is not None:
+                overdue = disarmed_minutes >= partition.alert_if_disarmed_minutes
+
+        entries.append(
+            DashboardPartitionEntry(
+                id=partition.id,
+                name=partition.name,
+                description=partition.description,
+                location_id=partition.location_id,
+                state=current_state,
+                disarmed_minutes=disarmed_minutes,
+                overdue=overdue,
+                scheduled_rearm_at=state.scheduled_rearm_at if state else None,
+                last_changed_at=state.last_changed_at if state else None,
+                last_changed_by=state.last_changed_by if state else None,
+            )
+        )
+
+    # Sort: active (error/partial/disarmed) first, then armed / unknown
+    entries.sort(key=lambda e: (0 if e.state in _ACTIVE_STATES else 1, e.name))
+
+    active_count = sum(1 for e in entries if e.state in _ACTIVE_STATES)
+
+    return DashboardResponse(
+        partitions=entries,
+        total=len(entries),
+        active_count=active_count,
     )
 
 

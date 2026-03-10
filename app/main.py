@@ -15,6 +15,7 @@ from app.cameras.routes import router as cameras_router
 from app.core.database import engine
 from app.locations.routes import router as locations_router
 from app.nvrs.routes import router as nvrs_router
+from app.partitions.routes import router as partitions_router, dashboard_router
 
 
 def _run_migrations() -> None:
@@ -39,3 +40,5 @@ app = FastAPI(
 app.include_router(locations_router)
 app.include_router(nvrs_router)
 app.include_router(cameras_router)
+app.include_router(partitions_router)
+app.include_router(dashboard_router)

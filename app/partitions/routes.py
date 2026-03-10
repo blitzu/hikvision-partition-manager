@@ -16,6 +16,7 @@ from app.partitions.schemas import (
     PartitionCameraSync,
     PartitionStateRead,
     PaginatedAuditLog,
+    DashboardResponse,
 )
 from app.partitions.service import (
     disarm_partition,
@@ -28,9 +29,30 @@ from app.partitions.service import (
     delete_partition,
     get_partition_state,
     get_partition_audit_log,
+    get_dashboard,
 )
 
 router = APIRouter(prefix="/api/partitions", tags=["partitions"])
+dashboard_router = APIRouter(prefix="/api", tags=["dashboard"])
+
+# ---------------------------------------------------------------------------
+# Dashboard endpoint
+# ---------------------------------------------------------------------------
+
+@dashboard_router.get("/dashboard", response_model=APIResponse[DashboardResponse])
+async def get_dashboard_endpoint(
+    db: AsyncSession = Depends(get_db),
+):
+    """Aggregated dashboard: all partitions with disarmed duration, overdue flag.
+
+    Partitions in active states (error / partial / disarmed) are sorted first.
+    """
+    try:
+        result = await get_dashboard(db)
+        return APIResponse(success=True, data=result)
+    except Exception as e:
+        return APIResponse(success=False, error=str(e))
+
 
 # ---------------------------------------------------------------------------
 # Arm / Disarm endpoints (pre-existing)
