@@ -1,0 +1,34 @@
+"""FastAPI application entry point.
+
+Lifespan runs Alembic migrations on startup via asyncio.to_thread
+(required to avoid threading.local issues with Alembic's sync context).
+"""
+import asyncio
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
+
+from alembic import command
+from alembic.config import Config
+from fastapi import FastAPI
+
+from app.core.database import engine
+
+
+def _run_migrations() -> None:
+    """Run alembic upgrade head. Executes synchronously in a thread pool."""
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Application lifespan: run migrations on startup, dispose engine on shutdown."""
+    await asyncio.to_thread(_run_migrations)
+    yield
+    await engine.dispose()
+
+
+app = FastAPI(
+    title="Hikvision Partition Manager",
+    lifespan=lifespan,
+)

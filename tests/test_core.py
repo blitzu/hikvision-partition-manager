@@ -47,24 +47,22 @@ def test_encrypt_hides_plaintext():
     assert "secret" not in ciphertext
 
 
-def test_mock_isapi_device_info():
+async def test_mock_isapi_device_info():
     """MockISAPIClient().get_device_info() returns dict with 'deviceName' key."""
-    import asyncio
     from tests.mocks import MockISAPIClient
 
     client = MockISAPIClient()
-    result = asyncio.get_event_loop().run_until_complete(client.get_device_info())
+    result = await client.get_device_info()
     assert isinstance(result, dict)
     assert "deviceName" in result
 
 
-def test_mock_isapi_channels():
+async def test_mock_isapi_channels():
     """MockISAPIClient().get_camera_channels() returns list with 'channel_no' key."""
-    import asyncio
     from tests.mocks import MockISAPIClient
 
     client = MockISAPIClient()
-    result = asyncio.get_event_loop().run_until_complete(client.get_camera_channels())
+    result = await client.get_camera_channels()
     assert isinstance(result, list)
     assert len(result) > 0
     assert "channel_no" in result[0]
