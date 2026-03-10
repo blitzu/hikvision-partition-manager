@@ -1,5 +1,5 @@
 import uuid
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -14,6 +14,8 @@ from app.partitions.schemas import (
     PartitionRead,
     PartitionDetail,
     PartitionCameraSync,
+    PartitionStateRead,
+    PaginatedAuditLog,
 )
 from app.partitions.service import (
     disarm_partition,
@@ -24,6 +26,8 @@ from app.partitions.service import (
     update_partition,
     sync_partition_cameras,
     delete_partition,
+    get_partition_state,
+    get_partition_audit_log,
 )
 
 router = APIRouter(prefix="/api/partitions", tags=["partitions"])
@@ -140,6 +144,38 @@ async def sync_cameras(
 ):
     try:
         result = await sync_partition_cameras(partition_id, body.camera_ids, db)
+        return APIResponse(success=True, data=result)
+    except HTTPException as e:
+        return APIResponse(success=False, error=e.detail)
+    except Exception as e:
+        return APIResponse(success=False, error=str(e))
+
+
+@router.get("/{partition_id}/state", response_model=APIResponse[PartitionStateRead])
+async def get_state(
+    partition_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Deep-dive into why a partition is in its current state (per-camera status and refcounts)."""
+    try:
+        result = await get_partition_state(partition_id, db)
+        return APIResponse(success=True, data=result)
+    except HTTPException as e:
+        return APIResponse(success=False, error=e.detail)
+    except Exception as e:
+        return APIResponse(success=False, error=str(e))
+
+
+@router.get("/{partition_id}/audit", response_model=APIResponse[PaginatedAuditLog])
+async def get_audit(
+    partition_id: uuid.UUID,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+):
+    """Paginated audit log for a partition. Supports limit and offset query parameters."""
+    try:
+        result = await get_partition_audit_log(partition_id, limit, offset, db)
         return APIResponse(success=True, data=result)
     except HTTPException as e:
         return APIResponse(success=False, error=e.detail)

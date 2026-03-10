@@ -2,7 +2,7 @@ import uuid
 import asyncio
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 
 from fastapi import HTTPException
 from sqlalchemy import select, update, delete
@@ -30,6 +30,10 @@ from app.partitions.schemas import (
     PartitionRead,
     PartitionDetail,
     CameraRead,
+    CameraStateRead,
+    PartitionStateRead,
+    AuditLogEntryRead,
+    PaginatedAuditLog,
 )
 
 
@@ -657,3 +661,121 @@ async def delete_partition(
 
     partition.deleted_at = datetime.now(timezone.utc)
     await db.commit()
+
+
+async def get_partition_state(
+    partition_id: uuid.UUID,
+    db: AsyncSession,
+) -> PartitionStateRead:
+    """Return deep-dive partition state: overall state + per-camera detection status and refcounts."""
+    partition = await db.get(Partition, partition_id)
+    if not partition or partition.deleted_at is not None:
+        raise HTTPException(status_code=404, detail="Partition not found")
+
+    # Load PartitionState
+    stmt = select(PartitionState).where(PartitionState.partition_id == partition_id)
+    result = await db.execute(stmt)
+    state = result.scalar_one_or_none()
+
+    # Load cameras with NVR info
+    stmt = (
+        select(Camera, NVRDevice)
+        .join(PartitionCamera, Camera.id == PartitionCamera.camera_id)
+        .join(NVRDevice, Camera.nvr_id == NVRDevice.id)
+        .where(PartitionCamera.partition_id == partition_id)
+    )
+    result = await db.execute(stmt)
+    camera_rows = result.all()
+
+    camera_ids = [cam.id for cam, _ in camera_rows]
+
+    # Bulk-load snapshots for this partition
+    snapshots: Dict[uuid.UUID, Any] = {}
+    if camera_ids:
+        stmt = select(CameraDetectionSnapshot).where(
+            CameraDetectionSnapshot.partition_id == partition_id,
+            CameraDetectionSnapshot.camera_id.in_(camera_ids),
+        )
+        res = await db.execute(stmt)
+        for snap in res.scalars().all():
+            snapshots[snap.camera_id] = snap.snapshot_data
+
+    # Bulk-load refcounts
+    refcounts: Dict[uuid.UUID, List[uuid.UUID]] = {}
+    if camera_ids:
+        stmt = select(CameraDisarmRefcount).where(
+            CameraDisarmRefcount.camera_id.in_(camera_ids)
+        )
+        res = await db.execute(stmt)
+        for rc in res.scalars().all():
+            refcounts[rc.camera_id] = rc.disarmed_by_partitions
+
+    cameras_out = []
+    for cam, nvr in camera_rows:
+        disarmed_by = refcounts.get(cam.id, [])
+        cameras_out.append(
+            CameraStateRead(
+                id=cam.id,
+                channel_no=cam.channel_no,
+                name=cam.name,
+                nvr_id=nvr.id,
+                detection_snapshot=snapshots.get(cam.id),
+                disarmed_by_partitions=disarmed_by,
+                disarm_count=len(disarmed_by),
+            )
+        )
+
+    return PartitionStateRead(
+        partition_id=partition_id,
+        state=state.state if state else None,
+        last_changed_at=state.last_changed_at if state else None,
+        last_changed_by=state.last_changed_by if state else None,
+        scheduled_rearm_at=state.scheduled_rearm_at if state else None,
+        error_detail=state.error_detail if state else None,
+        cameras=cameras_out,
+    )
+
+
+async def get_partition_audit_log(
+    partition_id: uuid.UUID,
+    limit: int,
+    offset: int,
+    db: AsyncSession,
+) -> PaginatedAuditLog:
+    """Return paginated audit log for a partition."""
+    partition = await db.get(Partition, partition_id)
+    if not partition or partition.deleted_at is not None:
+        raise HTTPException(status_code=404, detail="Partition not found")
+
+    from sqlalchemy import func as sql_func
+
+    # Total count
+    count_stmt = select(sql_func.count(PartitionAuditLog.id)).where(
+        PartitionAuditLog.partition_id == partition_id
+    )
+    total = (await db.execute(count_stmt)).scalar_one()
+
+    # Paginated rows — newest first
+    stmt = (
+        select(PartitionAuditLog)
+        .where(PartitionAuditLog.partition_id == partition_id)
+        .order_by(PartitionAuditLog.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    result = await db.execute(stmt)
+    rows = result.scalars().all()
+
+    items = [
+        AuditLogEntryRead(
+            id=row.id,
+            partition_id=row.partition_id,
+            action=row.action,
+            performed_by=row.performed_by,
+            audit_metadata=row.audit_metadata,
+            created_at=row.created_at,
+        )
+        for row in rows
+    ]
+
+    return PaginatedAuditLog(total=total, limit=limit, offset=offset, items=items)
