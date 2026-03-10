@@ -19,12 +19,12 @@
 
 ### NVR & Camera Management
 
-- [ ] **NVR-01**: Operator can create a location (name, timezone)
-- [ ] **NVR-02**: Operator can add an NVR device to a location (name, IP, port, username, password); password stored encrypted
+- [x] **NVR-01**: Operator can create a location (name, timezone)
+- [x] **NVR-02**: Operator can add an NVR device to a location (name, IP, port, username, password); password stored encrypted
 - [ ] **NVR-03**: Operator can test NVR connectivity via API; returns deviceInfo on success
 - [ ] **NVR-04**: Operator can sync cameras from an NVR by fetching live channel list via ISAPI and upserting into cameras table
 - [ ] **NVR-05**: System updates nvr_devices.last_seen_at and status on every successful ISAPI contact
-- [ ] **NVR-06**: NVR passwords are never written to logs or API responses
+- [x] **NVR-06**: NVR passwords are never written to logs or API responses
 
 ### Virtual Partition CRUD
 
@@ -140,12 +140,12 @@
 | DATA-07 | Phase 1 | Complete |
 | DATA-08 | Phase 1 | Complete |
 | DATA-09 | Phase 1 | Complete |
-| NVR-01 | Phase 1 | Pending |
-| NVR-02 | Phase 1 | Pending |
+| NVR-01 | Phase 1 | Complete |
+| NVR-02 | Phase 1 | Complete |
 | NVR-03 | Phase 1 | Pending |
 | NVR-04 | Phase 1 | Pending |
 | NVR-05 | Phase 1 | Pending |
-| NVR-06 | Phase 1 | Pending |
+| NVR-06 | Phase 1 | Complete |
 | ISAPI-01 | Phase 2 | Pending |
 | ISAPI-02 | Phase 2 | Pending |
 | ISAPI-03 | Phase 2 | Pending |

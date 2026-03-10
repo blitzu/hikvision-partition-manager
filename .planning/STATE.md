@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 01-foundation/01-01-PLAN.md
-last_updated: "2026-03-10T13:20:06.135Z"
+stopped_at: Completed 01-foundation/01-02-PLAN.md
+last_updated: "2026-03-10T13:25:06.673Z"
 last_activity: 2026-03-10 — Roadmap created, requirements mapped to 6 phases
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -51,6 +51,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 01-foundation P01 | 15 | 2 tasks | 20 files |
+| Phase 01-foundation P02 | 8 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,9 @@ Recent decisions affecting current work:
 - [Phase 01-foundation]: expire_on_commit=False on async_sessionmaker prevents MissingGreenlet errors in async context
 - [Phase 01-foundation]: GENERATED ALWAYS AS STORED for disarm_count added via raw ALTER TABLE SQL (Computed() has asyncpg issues)
 - [Phase 01-foundation]: tool.setuptools.packages.find include=[app*] required for pip editable install with multi-package layout
+- [Phase 01-foundation]: NVRRead uses structural field exclusion — password omitted from schema entirely, not via exclude= flag
+- [Phase 01-foundation]: encrypt_password(body.password) called before NVRDevice ORM instantiation — plaintext never touches any model attribute
+- [Phase 01-foundation]: Unknown FK returns APIResponse(success=False, error='Location not found') inside 200 envelope — consistent with response contract
 
 ### Pending Todos
 
@@ -79,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T13:20:06.132Z
-Stopped at: Completed 01-foundation/01-01-PLAN.md
+Last session: 2026-03-10T13:25:06.670Z
+Stopped at: Completed 01-foundation/01-02-PLAN.md
 Resume file: None
