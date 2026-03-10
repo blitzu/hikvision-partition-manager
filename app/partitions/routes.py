@@ -1,0 +1,147 @@
+import uuid
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_db
+from app.core.schemas import APIResponse
+from app.partitions.schemas import (
+    DisarmRequest,
+    DisarmResponse,
+    ArmRequest,
+    ArmResponse,
+    PartitionCreate,
+    PartitionUpdate,
+    PartitionRead,
+    PartitionDetail,
+    PartitionCameraSync,
+)
+from app.partitions.service import (
+    disarm_partition,
+    arm_partition,
+    create_partition,
+    get_partitions,
+    get_partition_detail,
+    update_partition,
+    sync_partition_cameras,
+    delete_partition,
+)
+
+router = APIRouter(prefix="/api/partitions", tags=["partitions"])
+
+# ---------------------------------------------------------------------------
+# Arm / Disarm endpoints (pre-existing)
+# ---------------------------------------------------------------------------
+
+@router.post("/{partition_id}/disarm", response_model=APIResponse[DisarmResponse])
+async def disarm(
+    partition_id: uuid.UUID,
+    body: DisarmRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        result = await disarm_partition(partition_id, body.disarmed_by, body.reason, db)
+        return APIResponse(success=True, data=result)
+    except HTTPException as e:
+        return APIResponse(success=False, error=e.detail)
+    except Exception as e:
+        return APIResponse(success=False, error=str(e))
+
+@router.post("/{partition_id}/arm", response_model=APIResponse[ArmResponse])
+async def arm(
+    partition_id: uuid.UUID,
+    body: ArmRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        result = await arm_partition(partition_id, body.armed_by, db)
+        return APIResponse(success=True, data=result)
+    except HTTPException as e:
+        return APIResponse(success=False, error=e.detail)
+    except Exception as e:
+        return APIResponse(success=False, error=str(e))
+
+# ---------------------------------------------------------------------------
+# CRUD endpoints
+# ---------------------------------------------------------------------------
+
+@router.post("", response_model=APIResponse[PartitionRead])
+async def create(
+    body: PartitionCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        result = await create_partition(body, db)
+        return APIResponse(success=True, data=result)
+    except HTTPException as e:
+        return APIResponse(success=False, error=e.detail)
+    except Exception as e:
+        return APIResponse(success=False, error=str(e))
+
+
+@router.get("", response_model=APIResponse[list[PartitionRead]])
+async def list_partitions(
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        result = await get_partitions(db)
+        return APIResponse(success=True, data=result)
+    except Exception as e:
+        return APIResponse(success=False, error=str(e))
+
+
+@router.get("/{partition_id}", response_model=APIResponse[PartitionDetail])
+async def get_one(
+    partition_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        result = await get_partition_detail(partition_id, db)
+        return APIResponse(success=True, data=result)
+    except HTTPException as e:
+        return APIResponse(success=False, error=e.detail)
+    except Exception as e:
+        return APIResponse(success=False, error=str(e))
+
+
+@router.patch("/{partition_id}", response_model=APIResponse[PartitionRead])
+async def update(
+    partition_id: uuid.UUID,
+    body: PartitionUpdate,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        result = await update_partition(partition_id, body, db)
+        return APIResponse(success=True, data=result)
+    except HTTPException as e:
+        return APIResponse(success=False, error=e.detail)
+    except Exception as e:
+        return APIResponse(success=False, error=str(e))
+
+
+@router.delete("/{partition_id}", response_model=APIResponse[None])
+async def soft_delete(
+    partition_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        await delete_partition(partition_id, db)
+        return APIResponse(success=True)
+    except HTTPException as e:
+        return APIResponse(success=False, error=e.detail)
+    except Exception as e:
+        return APIResponse(success=False, error=str(e))
+
+
+@router.put("/{partition_id}/cameras", response_model=APIResponse[PartitionDetail])
+async def sync_cameras(
+    partition_id: uuid.UUID,
+    body: PartitionCameraSync,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        result = await sync_partition_cameras(partition_id, body.camera_ids, db)
+        return APIResponse(success=True, data=result)
+    except HTTPException as e:
+        return APIResponse(success=False, error=e.detail)
+    except Exception as e:
+        return APIResponse(success=False, error=str(e))
