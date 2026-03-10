@@ -21,7 +21,7 @@ class ISAPIClient:
         self._client_kwargs: dict = {
             "auth": self._auth,
             "verify": False,  # NVRs commonly use self-signed certs
-            "timeout": httpx.Timeout(connect=5.0, read=10.0),
+            "timeout": httpx.Timeout(10.0, connect=5.0, read=10.0),
         }
 
     async def get_device_info(self) -> dict:
@@ -39,6 +39,49 @@ class ISAPIClient:
             )
             resp.raise_for_status()
             return self._parse_channel_list(resp.text)
+
+    def _detection_url(self, channel_no: int, detection_type: str) -> str:
+        """Return the ISAPI Smart detection URL for the given channel and type."""
+        return f"{self.base_url}/ISAPI/Smart/{detection_type}/channels/{channel_no}"
+
+    async def get_detection_config(self, channel_no: int, detection_type: str) -> str:
+        """GET detection config for a channel; retry once on timeout.
+
+        Returns raw XML string on 200. Raises immediately on non-timeout errors.
+        On timeout: retries once. Second timeout re-raises TimeoutException.
+        """
+        url = self._detection_url(channel_no, detection_type)
+        async with httpx.AsyncClient(**self._client_kwargs) as client:
+            try:
+                resp = await client.get(url)
+            except httpx.TimeoutException:
+                resp = await client.get(url)
+            resp.raise_for_status()
+            return resp.text
+
+    async def put_detection_config(
+        self, channel_no: int, detection_type: str, xml_body: str
+    ) -> None:
+        """PUT detection config for a channel; retry once on timeout.
+
+        Returns None on 200. Raises immediately on non-timeout errors.
+        On timeout: retries once. Second timeout re-raises TimeoutException.
+        """
+        url = self._detection_url(channel_no, detection_type)
+        async with httpx.AsyncClient(**self._client_kwargs) as client:
+            try:
+                resp = await client.put(
+                    url,
+                    headers={"Content-Type": "text/xml"},
+                    content=xml_body.encode(),
+                )
+            except httpx.TimeoutException:
+                resp = await client.put(
+                    url,
+                    headers={"Content-Type": "text/xml"},
+                    content=xml_body.encode(),
+                )
+            resp.raise_for_status()
 
     def _parse_xml(self, xml_text: str) -> dict:
         """Parse Hikvision XML response into a flat dict (strips namespaces)."""

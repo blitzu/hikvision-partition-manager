@@ -16,3 +16,11 @@ class MockISAPIClient:
             {"channel_no": 1, "name": "Camera 1"},
             {"channel_no": 2, "name": "Camera 2"},
         ]
+
+    async def get_detection_config(self, channel_no: int, detection_type: str) -> str:
+        return "<MotionDetection><enabled>true</enabled></MotionDetection>"
+
+    async def put_detection_config(
+        self, channel_no: int, detection_type: str, xml_body: str
+    ) -> None:
+        return None
