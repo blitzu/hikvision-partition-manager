@@ -12,7 +12,7 @@ Six phases take the service from an empty repo to a fully deployed microservice.
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation** - Database schema, migrations, location/NVR/camera CRUD and encryption
+- [x] **Phase 1: Foundation** - Database schema, migrations, location/NVR/camera CRUD and encryption (completed 2026-03-10)
 - [ ] **Phase 2: ISAPI Core Operations** - HTTP Digest client, disarm and arm operations with refcount logic
 - [ ] **Phase 3: Partition API** - Partition CRUD, REST API surface, audit log and state endpoints
 - [ ] **Phase 4: Automation & Alerts** - Background jobs (auto-rearm, stuck monitor, NVR health) and webhook delivery
@@ -124,7 +124,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 2/3 | In Progress|  |
+| 1. Foundation | 3/3 | Complete   | 2026-03-10 |
 | 2. ISAPI Core Operations | 0/3 | Not started | - |
 | 3. Partition API | 0/3 | Not started | - |
 | 4. Automation & Alerts | 0/2 | Not started | - |
