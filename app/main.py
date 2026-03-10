@@ -12,6 +12,7 @@ from alembic.config import Config
 from fastapi import FastAPI
 
 from app.core.database import engine
+from app.locations.routes import router as locations_router
 
 
 def _run_migrations() -> None:
@@ -32,3 +33,5 @@ app = FastAPI(
     title="Hikvision Partition Manager",
     lifespan=lifespan,
 )
+
+app.include_router(locations_router)
