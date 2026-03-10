@@ -81,11 +81,11 @@ Plans:
   2. A partition disarmed past its alert_if_disarmed_minutes threshold triggers a stuck_disarmed webhook every 5 minutes until rearmed
   3. When an NVR transitions from online to offline, the NVR offline webhook fires within 60 seconds
   4. Manually arming a partition before its scheduled rearm time cancels the pending rearm job
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: APScheduler setup, auto-rearm job, and job cancellation on manual arm
-- [ ] 04-02: Stuck-disarmed monitor, NVR health check, and webhook delivery
+- [ ] 04-01-PLAN.md — APScheduler setup, auto-rearm job with webhook, and job cancellation on manual arm
+- [ ] 04-02-PLAN.md — Stuck-disarmed monitor, NVR health check, and monitor registration into lifespan
 
 ### Phase 5: Admin UI
 **Goal**: Operators can monitor all partition states, trigger arm/disarm with confirmation, edit partitions, and manage NVRs through a web browser — with no page refresh needed for status updates
