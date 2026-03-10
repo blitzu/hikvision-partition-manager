@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict
-from typing import Generic, TypeVar, Optional, List
+from typing import Generic, TypeVar, Optional, List, Any, Dict
 
 T = TypeVar("T")
 
@@ -84,3 +84,60 @@ class PartitionDetail(PartitionRead):
 class PartitionCameraSync(BaseModel):
     """Replace camera membership for a partition."""
     camera_ids: List[uuid.UUID]
+
+
+# ---------------------------------------------------------------------------
+# State endpoint schemas
+# ---------------------------------------------------------------------------
+
+class CameraStateRead(BaseModel):
+    """Per-camera detection status inside PartitionStateRead."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    channel_no: int
+    name: Optional[str] = None
+    nvr_id: uuid.UUID
+    # Detection types currently enabled in the ISAPI snapshot, keyed by detection type.
+    # None if no snapshot exists (camera is in armed state with no disarm recorded).
+    detection_snapshot: Optional[Dict[str, Any]] = None
+    # Refcount: list of partition UUIDs that have disarmed this camera.
+    disarmed_by_partitions: List[uuid.UUID] = []
+    disarm_count: int = 0
+
+
+class PartitionStateRead(BaseModel):
+    """Deep-dive state for a partition: overall state + per-camera detection status & refcounts."""
+    model_config = ConfigDict(from_attributes=True)
+
+    partition_id: uuid.UUID
+    state: Optional[str] = None
+    last_changed_at: Optional[datetime] = None
+    last_changed_by: Optional[str] = None
+    scheduled_rearm_at: Optional[datetime] = None
+    error_detail: Optional[str] = None
+    cameras: List[CameraStateRead] = []
+
+
+# ---------------------------------------------------------------------------
+# Audit log schemas
+# ---------------------------------------------------------------------------
+
+class AuditLogEntryRead(BaseModel):
+    """Single audit log entry."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    partition_id: uuid.UUID
+    action: str
+    performed_by: str
+    audit_metadata: Optional[Dict[str, Any]] = None
+    created_at: datetime
+
+
+class PaginatedAuditLog(BaseModel):
+    """Paginated audit log response with metadata."""
+    total: int
+    limit: int
+    offset: int
+    items: List[AuditLogEntryRead]
