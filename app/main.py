@@ -13,6 +13,7 @@ from fastapi import FastAPI
 
 from app.core.database import engine
 from app.locations.routes import router as locations_router
+from app.nvrs.routes import router as nvrs_router
 
 
 def _run_migrations() -> None:
@@ -35,3 +36,4 @@ app = FastAPI(
 )
 
 app.include_router(locations_router)
+app.include_router(nvrs_router)
