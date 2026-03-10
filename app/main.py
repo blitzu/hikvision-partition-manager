@@ -11,6 +11,7 @@ from alembic import command
 from alembic.config import Config
 from fastapi import FastAPI
 
+from app.cameras.routes import router as cameras_router
 from app.core.database import engine
 from app.locations.routes import router as locations_router
 from app.nvrs.routes import router as nvrs_router
@@ -37,3 +38,4 @@ app = FastAPI(
 
 app.include_router(locations_router)
 app.include_router(nvrs_router)
+app.include_router(cameras_router)
