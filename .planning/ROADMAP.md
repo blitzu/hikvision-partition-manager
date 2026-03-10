@@ -31,12 +31,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Syncing cameras from the NVR upserts existing cameras by (nvr_id, channel_no) without creating duplicates
   4. Connectivity test endpoint returns deviceInfo on success and a clear error when the NVR is unreachable
   5. All nine schema tables exist with correct constraints and relationships, verified by migration running clean from empty database
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: Database schema and migrations (all 9 tables)
-- [ ] 01-02: Location and NVR CRUD with encryption
-- [ ] 01-03: Camera sync and connectivity test
+- [ ] 01-01-PLAN.md — Project scaffold, all 9 ORM models, Alembic migration, test infrastructure
+- [ ] 01-02-PLAN.md — Location and NVR CRUD with Fernet password encryption
+- [ ] 01-03-PLAN.md — ISAPIClient, camera sync with upsert, NVR connectivity test
 
 ### Phase 2: ISAPI Core Operations
 **Goal**: Disarming a partition disables detection on all member cameras via ISAPI, and arming restores exact saved state while respecting multi-partition refcount
