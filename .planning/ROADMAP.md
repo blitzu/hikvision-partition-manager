@@ -13,7 +13,7 @@ Six phases take the service from an empty repo to a fully deployed microservice.
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Database schema, migrations, location/NVR/camera CRUD and encryption (completed 2026-03-10)
-- [ ] **Phase 2: ISAPI Core Operations** - HTTP Digest client, disarm and arm operations with refcount logic
+- [x] **Phase 2: ISAPI Core Operations** - HTTP Digest client, disarm and arm operations with refcount logic (completed 2026-03-10)
 - [ ] **Phase 3: Partition API** - Partition CRUD, REST API surface, audit log and state endpoints
 - [ ] **Phase 4: Automation & Alerts** - Background jobs (auto-rearm, stuck monitor, NVR health) and webhook delivery
 - [ ] **Phase 5: Admin UI** - HTMX + Jinja2 dashboard, partition detail, editor, and NVR management pages
@@ -34,9 +34,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Project scaffold, all 9 ORM models, Alembic migration, test infrastructure
-- [ ] 01-02-PLAN.md — Location and NVR CRUD with Fernet password encryption
-- [ ] 01-03-PLAN.md — ISAPIClient, camera sync with upsert, NVR connectivity test
+- [x] 01-01-PLAN.md — Project scaffold, all 9 ORM models, Alembic migration, test infrastructure
+- [x] 01-02-PLAN.md — Location and NVR CRUD with Fernet password encryption
+- [x] 01-03-PLAN.md — ISAPIClient, camera sync with upsert, NVR connectivity test
 
 ### Phase 2: ISAPI Core Operations
 **Goal**: Disarming a partition disables detection on all member cameras via ISAPI, and arming restores exact saved state while respecting multi-partition refcount
@@ -52,8 +52,8 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Extend ISAPIClient with detection GET/PUT methods and timeout retry logic
-- [ ] 02-02-PLAN.md — Disarm operation: NVR pre-check, snapshot, refcount increment, parallel ISAPI writes
-- [ ] 02-03-PLAN.md — Arm operation: refcount decrement, conditional restore, snapshot deletion
+- [x] 02-02-PLAN.md — Disarm operation: NVR pre-check, snapshot, refcount increment, parallel ISAPI writes
+- [x] 02-03-PLAN.md — Arm operation: refcount decrement, conditional restore, snapshot deletion
 
 ### Phase 3: Partition API
 **Goal**: Operators can fully manage partitions via REST API and external VMS can query partition state and trigger arm/disarm
@@ -68,7 +68,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 03-01: Partition CRUD (create, list, detail, update, delete with guard)
+- [x] 03-01: Partition CRUD (create, list, detail, update, delete with guard)
 - [ ] 03-02: REST API surface (all routes, envelope, validation, audit and state endpoints)
 - [ ] 03-03: Dashboard and location/NVR API endpoints
 
@@ -125,8 +125,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete    | 2026-03-10 |
-| 2. ISAPI Core Operations | 1/3 | In Progress | - |
-| 3. Partition API | 0/3 | Not started | - |
+| 2. ISAPI Core Operations | 3/3 | Complete | 2026-03-10 |
+| 3. Partition API | 1/3 | In progress | - |
 | 4. Automation & Alerts | 0/2 | Not started | - |
 | 5. Admin UI | 0/2 | Not started | - |
 | 6. Infrastructure | 0/2 | Not started | - |
