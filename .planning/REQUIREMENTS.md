@@ -7,15 +7,15 @@
 
 ### Data Model
 
-- [ ] **DATA-01**: System stores locations with name and timezone
-- [ ] **DATA-02**: System stores NVR devices linked to a location, with encrypted password, IP, port, model, status
-- [ ] **DATA-03**: System stores cameras linked to an NVR with channel number and enabled flag; (nvr_id, channel_no) is unique
-- [ ] **DATA-04**: System stores virtual partitions with name, description, auto_rearm_minutes, alert_if_disarmed_minutes
-- [ ] **DATA-05**: System stores partition-camera membership (many-to-many)
-- [ ] **DATA-06**: System stores partition_state per partition: state enum (armed/disarmed/error/partial), last_changed_at, last_changed_by, scheduled_rearm_at, error_detail
-- [ ] **DATA-07**: System stores camera_detection_snapshot per camera per partition: full JSONB of ISAPI XML response, taken_at
-- [ ] **DATA-08**: System stores camera_disarm_refcount per camera: array of partition_ids currently disarming, generated count column
-- [ ] **DATA-09**: System stores partition_audit_log entries: partition_id, action, performed_by, metadata JSONB, created_at
+- [x] **DATA-01**: System stores locations with name and timezone
+- [x] **DATA-02**: System stores NVR devices linked to a location, with encrypted password, IP, port, model, status
+- [x] **DATA-03**: System stores cameras linked to an NVR with channel number and enabled flag; (nvr_id, channel_no) is unique
+- [x] **DATA-04**: System stores virtual partitions with name, description, auto_rearm_minutes, alert_if_disarmed_minutes
+- [x] **DATA-05**: System stores partition-camera membership (many-to-many)
+- [x] **DATA-06**: System stores partition_state per partition: state enum (armed/disarmed/error/partial), last_changed_at, last_changed_by, scheduled_rearm_at, error_detail
+- [x] **DATA-07**: System stores camera_detection_snapshot per camera per partition: full JSONB of ISAPI XML response, taken_at
+- [x] **DATA-08**: System stores camera_disarm_refcount per camera: array of partition_ids currently disarming, generated count column
+- [x] **DATA-09**: System stores partition_audit_log entries: partition_id, action, performed_by, metadata JSONB, created_at
 
 ### NVR & Camera Management
 
@@ -131,15 +131,15 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 1 | Pending |
-| DATA-02 | Phase 1 | Pending |
-| DATA-03 | Phase 1 | Pending |
-| DATA-04 | Phase 1 | Pending |
-| DATA-05 | Phase 1 | Pending |
-| DATA-06 | Phase 1 | Pending |
-| DATA-07 | Phase 1 | Pending |
-| DATA-08 | Phase 1 | Pending |
-| DATA-09 | Phase 1 | Pending |
+| DATA-01 | Phase 1 | Complete |
+| DATA-02 | Phase 1 | Complete |
+| DATA-03 | Phase 1 | Complete |
+| DATA-04 | Phase 1 | Complete |
+| DATA-05 | Phase 1 | Complete |
+| DATA-06 | Phase 1 | Complete |
+| DATA-07 | Phase 1 | Complete |
+| DATA-08 | Phase 1 | Complete |
+| DATA-09 | Phase 1 | Complete |
 | NVR-01 | Phase 1 | Pending |
 | NVR-02 | Phase 1 | Pending |
 | NVR-03 | Phase 1 | Pending |
