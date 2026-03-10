@@ -96,11 +96,11 @@ Plans:
   2. Partition detail page shows per-camera detection status, a countdown to auto-rearm, and the last 20 audit entries without a full page reload
   3. ARM and DISARM buttons on the dashboard and detail pages show a confirmation modal before sending the request
   4. NVR management page allows adding an NVR and testing connectivity inline via HTMX without navigating away
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 05-01: Dashboard page and partition detail page (HTMX polling, state badges, modals)
-- [ ] 05-02: Partition create/edit page and NVR management page
+- [ ] 05-01-PLAN.md — Dashboard page and partition detail page (HTMX polling, state badges, modals)
+- [ ] 05-02-PLAN.md — Partition create/edit page and NVR management page
 
 ### Phase 6: Infrastructure
 **Goal**: The entire service starts with `docker compose up`, produces structured logs, shuts down cleanly, and any developer can understand it from the README alone
