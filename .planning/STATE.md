@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-03-10T18:19:26.542Z"
+stopped_at: Completed 03-03-PLAN.md
+last_updated: "2026-03-10T18:25:51.618Z"
 last_activity: 2026-03-10 — Partition CRUD API with soft-delete, camera sync, location validation (18 tests)
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 9
-  completed_plans: 8
+  completed_plans: 9
   percent: 100
 ---
 
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 
 ## Current Position
 
-Phase: 3 of 6 (Partition API) — Plan 1 of N complete
-Plan: 1 complete in current phase
-Status: Phase 3 Plan 1 complete — Partition CRUD & Soft Delete implemented
-Last activity: 2026-03-10 — Partition CRUD API with soft-delete, camera sync, location validation (18 tests)
+Phase: 3 of 6 (Partition API) — Plan 3 of 3 complete
+Plan: 3 complete in current phase
+Status: Phase 3 complete — Dashboard endpoint with alert logic, overdue flags, and active-first sorting
+Last activity: 2026-03-10 — GET /api/dashboard with disarmed_minutes, overdue flag, active-first sort (96 tests)
 
-Progress: [███████████████] 100% (of current phase plan 1 goals)
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Progress: [███████████████] 100% (of current phase
 | Phase 02-isapi-core-operations P03 | 7 min | 1 task | 3 files |
 | Phase 03-partition-api P01 | 4 min | 5 tasks | 6 files |
 | Phase 03-partition-api P02 | 8 | 5 tasks | 4 files |
+| Phase 03-partition-api P03-03 | 5 | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,9 @@ Recent decisions affecting current work:
 - [Phase 03-partition-api]: Pydantic ConfigDict(from_attributes=True) used over deprecated class Config pattern
 - [Phase 03-partition-api]: Bulk-load snapshots and refcounts in get_partition_state using .in_() queries to avoid N+1 per camera
 - [Phase 03-partition-api]: Audit log ordered newest-first (created_at.desc()); disarm_count derived from len(disarmed_by_partitions) at query time
+- [Phase 03-partition-api]: dashboard_router uses prefix=/api so GET /api/dashboard has correct URL without duplicated prefix
+- [Phase 03-partition-api]: disarmed_minutes computed at query time from state.last_changed_at — no stored field needed
+- [Phase 03-partition-api]: overdue flag uses >= (at or past threshold triggers alert); active-first sort uses tuple key (priority_int, name)
 
 ### Pending Todos
 
@@ -109,6 +113,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T18:19:26.540Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-03-10T18:25:51.616Z
+Stopped at: Completed 03-03-PLAN.md
 Resume file: None
