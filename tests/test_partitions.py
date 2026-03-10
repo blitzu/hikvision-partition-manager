@@ -679,3 +679,167 @@ async def test_disarm_not_found_returns_error_envelope(client, db_session):
     data = resp.json()
     assert data["success"] is False
     assert data["error"] is not None
+
+
+# ---------------------------------------------------------------------------
+# GET /api/dashboard
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_dashboard_empty(client, db_session):
+    """Dashboard returns empty list when no partitions exist."""
+    resp = await client.get("/api/dashboard")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is True
+    dashboard = data["data"]
+    assert dashboard["partitions"] == []
+    assert dashboard["total"] == 0
+    assert dashboard["active_count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_dashboard_returns_all_non_deleted_partitions(client, db_session):
+    """Dashboard returns non-deleted partitions only."""
+    from datetime import datetime, timezone
+    await _make_partition(db_session, name="Active Partition", state="armed")
+    deleted = await _make_partition(db_session, name="Deleted Partition", state="armed")
+    deleted.deleted_at = datetime.now(timezone.utc)
+    await db_session.commit()
+
+    resp = await client.get("/api/dashboard")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is True
+    names = [p["name"] for p in data["data"]["partitions"]]
+    assert "Active Partition" in names
+    assert "Deleted Partition" not in names
+    assert data["data"]["total"] == 1
+
+
+@pytest.mark.asyncio
+async def test_dashboard_disarmed_minutes_calculated(client, db_session):
+    """Dashboard calculates disarmed_minutes at request time for disarmed partitions."""
+    from datetime import datetime, timedelta, timezone
+    from app.partitions.models import PartitionState
+
+    part = await _make_partition(db_session, name="Disarmed Part")
+    # Override the state to disarmed with a known last_changed_at (30 min ago)
+    stmt = select(PartitionState).where(PartitionState.partition_id == part.id)
+    result = await db_session.execute(stmt)
+    state = result.scalar_one()
+    state.state = "disarmed"
+    state.last_changed_at = datetime.now(timezone.utc) - timedelta(minutes=30)
+    await db_session.commit()
+
+    resp = await client.get("/api/dashboard")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is True
+    entry = next(p for p in data["data"]["partitions"] if p["name"] == "Disarmed Part")
+    assert entry["state"] == "disarmed"
+    assert entry["disarmed_minutes"] is not None
+    # Should be approximately 30 minutes (allow ±2 min tolerance)
+    assert 28 <= entry["disarmed_minutes"] <= 32
+
+
+@pytest.mark.asyncio
+async def test_dashboard_overdue_flag_when_threshold_exceeded(client, db_session):
+    """Dashboard sets overdue=True when disarmed longer than alert_if_disarmed_minutes."""
+    from datetime import datetime, timedelta, timezone
+    from sqlalchemy import select
+    from app.partitions.models import PartitionState
+
+    # Create partition with 10-minute alert threshold
+    part = Partition(name="Overdue Part", alert_if_disarmed_minutes=10)
+    db_session.add(part)
+    await db_session.flush()
+    state = PartitionState(partition_id=part.id, state="disarmed")
+    state.last_changed_at = datetime.now(timezone.utc) - timedelta(minutes=20)
+    db_session.add(state)
+    await db_session.commit()
+
+    resp = await client.get("/api/dashboard")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is True
+    entry = next(p for p in data["data"]["partitions"] if p["name"] == "Overdue Part")
+    assert entry["overdue"] is True
+
+
+@pytest.mark.asyncio
+async def test_dashboard_not_overdue_within_threshold(client, db_session):
+    """Dashboard overdue=False when disarmed for less than alert_if_disarmed_minutes."""
+    from datetime import datetime, timedelta, timezone
+    from app.partitions.models import PartitionState
+
+    part = Partition(name="Recent Disarm", alert_if_disarmed_minutes=60)
+    db_session.add(part)
+    await db_session.flush()
+    state = PartitionState(partition_id=part.id, state="disarmed")
+    state.last_changed_at = datetime.now(timezone.utc) - timedelta(minutes=5)
+    db_session.add(state)
+    await db_session.commit()
+
+    resp = await client.get("/api/dashboard")
+    assert resp.status_code == 200
+    data = resp.json()
+    entry = next(p for p in data["data"]["partitions"] if p["name"] == "Recent Disarm")
+    assert entry["overdue"] is False
+    assert entry["disarmed_minutes"] is not None
+
+
+@pytest.mark.asyncio
+async def test_dashboard_armed_partition_no_disarmed_minutes(client, db_session):
+    """Dashboard disarmed_minutes is None for armed partitions."""
+    await _make_partition(db_session, name="Armed Part", state="armed")
+    await db_session.commit()
+
+    resp = await client.get("/api/dashboard")
+    assert resp.status_code == 200
+    data = resp.json()
+    entry = next(p for p in data["data"]["partitions"] if p["name"] == "Armed Part")
+    assert entry["state"] == "armed"
+    assert entry["disarmed_minutes"] is None
+    assert entry["overdue"] is False
+
+
+@pytest.mark.asyncio
+async def test_dashboard_active_partitions_sorted_first(client, db_session):
+    """Dashboard sorts error/partial/disarmed partitions before armed partitions."""
+    from datetime import datetime, timezone
+
+    await _make_partition(db_session, name="Armed A", state="armed")
+    await _make_partition(db_session, name="Disarmed B", state="disarmed")
+    await _make_partition(db_session, name="Error C", state="error")
+    await _make_partition(db_session, name="Armed D", state="armed")
+    await _make_partition(db_session, name="Partial E", state="partial")
+    await db_session.commit()
+
+    resp = await client.get("/api/dashboard")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is True
+    partitions = data["data"]["partitions"]
+    states = [p["state"] for p in partitions]
+
+    # All active states should appear before any armed state
+    last_active_idx = max(
+        i for i, s in enumerate(states) if s in ("error", "partial", "disarmed")
+    )
+    first_armed_idx = min(i for i, s in enumerate(states) if s == "armed")
+    assert last_active_idx < first_armed_idx
+
+    # active_count should be 3
+    assert data["data"]["active_count"] == 3
+
+
+@pytest.mark.asyncio
+async def test_dashboard_response_envelope(client, db_session):
+    """Dashboard always returns APIResponse envelope with success, data, error fields."""
+    resp = await client.get("/api/dashboard")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "success" in data
+    assert "data" in data
+    assert data["success"] is True
