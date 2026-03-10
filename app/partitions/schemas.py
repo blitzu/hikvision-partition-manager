@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Generic, TypeVar, Optional, List
 
 T = TypeVar("T")
@@ -53,6 +53,8 @@ class PartitionUpdate(BaseModel):
 
 
 class CameraRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     channel_no: int
     name: Optional[str] = None
@@ -60,11 +62,10 @@ class CameraRead(BaseModel):
     nvr_name: Optional[str] = None
     nvr_ip: Optional[str] = None
 
-    class Config:
-        from_attributes = True
-
 
 class PartitionRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     name: str
     description: Optional[str] = None
@@ -73,9 +74,6 @@ class PartitionRead(BaseModel):
     alert_if_disarmed_minutes: Optional[int] = None
     state: Optional[str] = None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class PartitionDetail(PartitionRead):
