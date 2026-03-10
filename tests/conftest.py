@@ -1,12 +1,32 @@
-"""Test fixtures: engine, db_session, and AsyncClient."""
+"""Test fixtures: engine, db_session, and AsyncClient.
+
+Using function-scoped engine for schema tests to avoid asyncio event loop
+cross-contamination with asyncpg connection pools. The session-scoped
+approach requires pytest-asyncio 0.24+ with explicit loop_scope; we use
+function-scoped here for compatibility with pytest-asyncio 0.23.x.
+"""
 import os
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from app.core.database import Base, get_db
 from app.main import app
+
+# Import all models to ensure Base.metadata is fully populated before create_all.
+# This mirrors the import pattern used in alembic/env.py.
+from app.locations.models import Location  # noqa: F401
+from app.nvrs.models import NVRDevice  # noqa: F401
+from app.cameras.models import Camera  # noqa: F401
+from app.partitions.models import (  # noqa: F401
+    Partition,
+    PartitionCamera,
+    PartitionState,
+    CameraDetectionSnapshot,
+    CameraDisarmRefcount,
+    PartitionAuditLog,
+)
 
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
@@ -14,9 +34,14 @@ TEST_DATABASE_URL = os.getenv(
 )
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="function")
 async def engine():
-    """Session-scoped async engine. Creates all tables at start, drops at end."""
+    """Function-scoped async engine. Creates all tables before test, drops after.
+
+    Schema tests use this directly. CRUD tests use db_session which builds on this.
+    Function scope avoids asyncio event loop / asyncpg connection pool mismatch
+    when using pytest-asyncio 0.23.x asyncio_mode=auto.
+    """
     eng = create_async_engine(TEST_DATABASE_URL, echo=False)
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -28,7 +53,7 @@ async def engine():
 
 @pytest_asyncio.fixture(scope="function")
 async def db_session(engine):
-    """Function-scoped session using nested transaction + rollback for isolation."""
+    """Function-scoped session using connection-level transaction for rollback isolation."""
     async with engine.connect() as conn:
         await conn.begin()
         session = AsyncSession(bind=conn, expire_on_commit=False)

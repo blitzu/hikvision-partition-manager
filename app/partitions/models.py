@@ -111,9 +111,9 @@ class CameraDisarmRefcount(Base):
     """Tracks which partitions have disarmed a camera, with a generated count column.
 
     The disarm_count column is a PostgreSQL GENERATED ALWAYS AS STORED column
-    computed from cardinality(disarmed_by_partitions). It is NOT represented as
-    a SQLAlchemy Mapped column here — it is added via raw SQL in the Alembic
-    migration due to asyncpg compatibility limitations with Computed().
+    computed from cardinality(disarmed_by_partitions). It is attached via a
+    DDL event listener (for create_all in tests) and also added explicitly in
+    the Alembic migration via raw SQL.
     """
 
     __tablename__ = "camera_disarm_refcount"
@@ -132,6 +132,19 @@ class CameraDisarmRefcount(Base):
     )
 
 
+from sqlalchemy import DDL, event  # noqa: E402
+
+event.listen(
+    CameraDisarmRefcount.__table__,
+    "after_create",
+    DDL(
+        "ALTER TABLE camera_disarm_refcount "
+        "ADD COLUMN disarm_count INTEGER "
+        "GENERATED ALWAYS AS (cardinality(disarmed_by_partitions)) STORED"
+    ),
+)
+
+
 class PartitionAuditLog(Base):
     __tablename__ = "partition_audit_log"
 
@@ -145,7 +158,11 @@ class PartitionAuditLog(Base):
     )
     action: Mapped[str] = mapped_column(String(64), nullable=False)
     performed_by: Mapped[str] = mapped_column(String(255), nullable=False)
-    metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    # Named "audit_metadata" in Python to avoid conflict with SQLAlchemy's
+    # reserved DeclarativeBase.metadata attribute; maps to "metadata" column in DB.
+    audit_metadata: Mapped[dict | None] = mapped_column(
+        "metadata", JSONB, nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
