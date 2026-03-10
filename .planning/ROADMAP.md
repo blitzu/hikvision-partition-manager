@@ -51,7 +51,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Extend ISAPIClient with detection GET/PUT methods and timeout retry logic
+- [x] 02-01-PLAN.md — Extend ISAPIClient with detection GET/PUT methods and timeout retry logic
 - [ ] 02-02-PLAN.md — Disarm operation: NVR pre-check, snapshot, refcount increment, parallel ISAPI writes
 - [ ] 02-03-PLAN.md — Arm operation: refcount decrement, conditional restore, snapshot deletion
 
@@ -125,7 +125,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete    | 2026-03-10 |
-| 2. ISAPI Core Operations | 0/3 | Not started | - |
+| 2. ISAPI Core Operations | 1/3 | In Progress | - |
 | 3. Partition API | 0/3 | Not started | - |
 | 4. Automation & Alerts | 0/2 | Not started | - |
 | 5. Admin UI | 0/2 | Not started | - |

@@ -59,11 +59,11 @@
 
 ### ISAPI HTTP Client
 
-- [ ] **ISAPI-01**: All ISAPI calls use HTTP Digest Authentication (not Basic)
-- [ ] **ISAPI-02**: Connection timeout: 5 seconds; read timeout: 10 seconds
-- [ ] **ISAPI-03**: On timeout, system retries once before marking camera/NVR as error
-- [ ] **ISAPI-04**: System accepts self-signed TLS certificates from NVRs
-- [ ] **ISAPI-05**: System parses XML responses (not JSON) from ISAPI endpoints
+- [x] **ISAPI-01**: All ISAPI calls use HTTP Digest Authentication (not Basic)
+- [x] **ISAPI-02**: Connection timeout: 5 seconds; read timeout: 10 seconds
+- [x] **ISAPI-03**: On timeout, system retries once before marking camera/NVR as error
+- [x] **ISAPI-04**: System accepts self-signed TLS certificates from NVRs
+- [x] **ISAPI-05**: System parses XML responses (not JSON) from ISAPI endpoints
 
 ### Background Jobs
 
@@ -146,11 +146,11 @@
 | NVR-04 | Phase 1 | Complete |
 | NVR-05 | Phase 1 | Complete |
 | NVR-06 | Phase 1 | Complete |
-| ISAPI-01 | Phase 2 | Pending |
-| ISAPI-02 | Phase 2 | Pending |
-| ISAPI-03 | Phase 2 | Pending |
-| ISAPI-04 | Phase 2 | Pending |
-| ISAPI-05 | Phase 2 | Pending |
+| ISAPI-01 | Phase 2 | Complete |
+| ISAPI-02 | Phase 2 | Complete |
+| ISAPI-03 | Phase 2 | Complete |
+| ISAPI-04 | Phase 2 | Complete |
+| ISAPI-05 | Phase 2 | Complete |
 | DARM-01 | Phase 2 | Pending |
 | DARM-02 | Phase 2 | Pending |
 | DARM-03 | Phase 2 | Pending |
