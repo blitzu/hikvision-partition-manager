@@ -126,7 +126,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete    | 2026-03-10 |
 | 2. ISAPI Core Operations | 3/3 | Complete | 2026-03-10 |
-| 3. Partition API | 1/3 | In progress | - |
+| 3. Partition API | 2/3 | In Progress|  |
 | 4. Automation & Alerts | 0/2 | Not started | - |
 | 5. Admin UI | 0/2 | Not started | - |
 | 6. Infrastructure | 0/2 | Not started | - |

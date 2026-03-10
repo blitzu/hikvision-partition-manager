@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in-progress
-stopped_at: "Completed 03-01-PLAN.md"
-last_updated: "2026-03-10T18:13:00.000Z"
-last_activity: 2026-03-10 — Phase 3 Plan 1 complete (Partition CRUD & Soft Delete)
+status: completed
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-03-10T18:19:26.542Z"
+last_activity: 2026-03-10 — Partition CRUD API with soft-delete, camera sync, location validation (18 tests)
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 9
+  completed_plans: 8
   percent: 100
 ---
 
@@ -62,6 +62,7 @@ Progress: [███████████████] 100% (of current phase
 | Phase 02-isapi-core-operations P02 | 7 min | 2 tasks | 5 files |
 | Phase 02-isapi-core-operations P03 | 7 min | 1 task | 3 files |
 | Phase 03-partition-api P01 | 4 min | 5 tasks | 6 files |
+| Phase 03-partition-api P02 | 8 | 5 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,8 @@ Recent decisions affecting current work:
 - [Phase 03-partition-api]: deletion guard blocks DELETE if state is 'disarmed' or 'partial' — requires arm before delete
 - [Phase 03-partition-api]: location validation in sync_partition_cameras uses camera -> NVR -> location_id chain; skipped if partition has no location_id
 - [Phase 03-partition-api]: Pydantic ConfigDict(from_attributes=True) used over deprecated class Config pattern
+- [Phase 03-partition-api]: Bulk-load snapshots and refcounts in get_partition_state using .in_() queries to avoid N+1 per camera
+- [Phase 03-partition-api]: Audit log ordered newest-first (created_at.desc()); disarm_count derived from len(disarmed_by_partitions) at query time
 
 ### Pending Todos
 
@@ -106,6 +109,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T18:13:00.000Z
-Stopped at: Completed 03-01-PLAN.md
-Resume file: .planning/phases/03-partition-api/03-01-PLAN.md
+Last session: 2026-03-10T18:19:26.540Z
+Stopped at: Completed 03-02-PLAN.md
+Resume file: None
