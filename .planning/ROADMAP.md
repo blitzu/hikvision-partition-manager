@@ -48,12 +48,12 @@ Plans:
   3. POSTing arm on a camera that belongs to two disarmed partitions does NOT restore detection until both partitions are armed
   4. A camera that is already disarmed (snapshot exists) retains its original snapshot when a second disarm is issued for it
   5. All ISAPI calls use HTTP Digest auth, accept self-signed TLS certs, retry once on timeout, and parse XML responses
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: ISAPI HTTP client (Digest auth, TLS, timeouts, XML parsing, retry)
-- [ ] 02-02: Disarm operation (snapshot, refcount increment, parallel ISAPI writes)
-- [ ] 02-03: Arm operation (refcount decrement, conditional restore, snapshot deletion)
+- [ ] 02-01-PLAN.md — Extend ISAPIClient with detection GET/PUT methods and timeout retry logic
+- [ ] 02-02-PLAN.md — Disarm operation: NVR pre-check, snapshot, refcount increment, parallel ISAPI writes
+- [ ] 02-03-PLAN.md — Arm operation: refcount decrement, conditional restore, snapshot deletion
 
 ### Phase 3: Partition API
 **Goal**: Operators can fully manage partitions via REST API and external VMS can query partition state and trigger arm/disarm
