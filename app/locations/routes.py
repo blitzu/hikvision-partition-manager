@@ -24,10 +24,13 @@ async def create_location(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> APIResponse[LocationRead]:
     """Create a new location."""
-    location = Location(name=body.name, timezone=body.timezone)
-    db.add(location)
-    await db.commit()
-    return APIResponse(success=True, data=LocationRead.model_validate(location))
+    try:
+        location = Location(name=body.name, timezone=body.timezone)
+        db.add(location)
+        await db.commit()
+        return APIResponse(success=True, data=LocationRead.model_validate(location))
+    except Exception as e:
+        return APIResponse(success=False, error=str(e))
 
 
 @router.get("", response_model=APIResponse[list[LocationRead]])
@@ -35,9 +38,12 @@ async def list_locations(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> APIResponse[list[LocationRead]]:
     """List all locations ordered by name."""
-    result = await db.execute(select(Location).order_by(Location.name))
-    locations = result.scalars().all()
-    return APIResponse(
-        success=True,
-        data=[LocationRead.model_validate(loc) for loc in locations],
-    )
+    try:
+        result = await db.execute(select(Location).order_by(Location.name))
+        locations = result.scalars().all()
+        return APIResponse(
+            success=True,
+            data=[LocationRead.model_validate(loc) for loc in locations],
+        )
+    except Exception as e:
+        return APIResponse(success=False, error=str(e))
