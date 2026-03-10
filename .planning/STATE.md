@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: completed
 stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-03-10T18:25:51.618Z"
-last_activity: 2026-03-10 — Partition CRUD API with soft-delete, camera sync, location validation (18 tests)
+last_updated: "2026-03-10T18:29:31.088Z"
+last_activity: 2026-03-10 — GET /api/dashboard with disarmed_minutes, overdue flag, active-first sort (96 tests)
 progress:
   total_phases: 6
   completed_phases: 3
