@@ -385,3 +385,297 @@ async def test_sync_cameras_partition_not_found(client, db_session):
     )
     data = resp.json()
     assert data["success"] is False
+
+
+# ---------------------------------------------------------------------------
+# GET /api/partitions/{id}/state
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_get_partition_state_no_cameras(client, db_session):
+    """State endpoint returns partition state with empty camera list."""
+    part = await _make_partition(db_session, name="Empty Partition", state="armed")
+    await db_session.commit()
+
+    resp = await client.get(f"/api/partitions/{part.id}/state")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is True
+    state = data["data"]
+    assert state["partition_id"] == str(part.id)
+    assert state["state"] == "armed"
+    assert state["cameras"] == []
+
+
+@pytest.mark.asyncio
+async def test_get_partition_state_not_found(client, db_session):
+    """State endpoint returns error for non-existent partition."""
+    fake_id = uuid.uuid4()
+    resp = await client.get(f"/api/partitions/{fake_id}/state")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is False
+    assert "not found" in data["error"].lower()
+
+
+@pytest.mark.asyncio
+async def test_get_partition_state_with_cameras_and_refcount(client, db_session):
+    """State endpoint includes per-camera detection snapshot and disarm refcounts."""
+    from app.partitions.models import (
+        CameraDetectionSnapshot,
+        CameraDisarmRefcount,
+    )
+
+    loc = await _make_location(db_session)
+    nvr = await _make_nvr(db_session, loc.id)
+    cam = await _make_camera(db_session, nvr.id, channel_no=1)
+    part = await _make_partition(db_session, location_id=loc.id, state="disarmed")
+    db_session.add(PartitionCamera(partition_id=part.id, camera_id=cam.id))
+
+    # Add a detection snapshot for this camera+partition
+    snapshot_data = {"MotionDetection": "<xml>disabled</xml>"}
+    db_session.add(
+        CameraDetectionSnapshot(
+            camera_id=cam.id,
+            partition_id=part.id,
+            snapshot_data=snapshot_data,
+        )
+    )
+
+    # Add a disarm refcount
+    db_session.add(
+        CameraDisarmRefcount(
+            camera_id=cam.id,
+            disarmed_by_partitions=[part.id],
+        )
+    )
+
+    await db_session.commit()
+
+    resp = await client.get(f"/api/partitions/{part.id}/state")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is True
+    state = data["data"]
+    assert state["state"] == "disarmed"
+    assert len(state["cameras"]) == 1
+    cam_state = state["cameras"][0]
+    assert cam_state["id"] == str(cam.id)
+    assert cam_state["detection_snapshot"] == snapshot_data
+    assert str(part.id) in cam_state["disarmed_by_partitions"]
+    assert cam_state["disarm_count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_get_partition_state_camera_no_snapshot(client, db_session):
+    """State endpoint returns None for detection_snapshot if camera is armed (no snapshot)."""
+    loc = await _make_location(db_session)
+    nvr = await _make_nvr(db_session, loc.id)
+    cam = await _make_camera(db_session, nvr.id, channel_no=2)
+    part = await _make_partition(db_session, location_id=loc.id, state="armed")
+    db_session.add(PartitionCamera(partition_id=part.id, camera_id=cam.id))
+    await db_session.commit()
+
+    resp = await client.get(f"/api/partitions/{part.id}/state")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is True
+    cam_state = data["data"]["cameras"][0]
+    assert cam_state["detection_snapshot"] is None
+    assert cam_state["disarmed_by_partitions"] == []
+    assert cam_state["disarm_count"] == 0
+
+
+# ---------------------------------------------------------------------------
+# GET /api/partitions/{id}/audit
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_get_partition_audit_empty(client, db_session):
+    """Audit endpoint returns empty paginated result for new partition."""
+    part = await _make_partition(db_session)
+    await db_session.commit()
+
+    resp = await client.get(f"/api/partitions/{part.id}/audit")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is True
+    audit = data["data"]
+    assert audit["total"] == 0
+    assert audit["items"] == []
+    assert audit["limit"] == 20
+    assert audit["offset"] == 0
+
+
+@pytest.mark.asyncio
+async def test_get_partition_audit_not_found(client, db_session):
+    """Audit endpoint returns error for non-existent partition."""
+    fake_id = uuid.uuid4()
+    resp = await client.get(f"/api/partitions/{fake_id}/audit")
+    data = resp.json()
+    assert data["success"] is False
+    assert "not found" in data["error"].lower()
+
+
+@pytest.mark.asyncio
+async def test_get_partition_audit_with_entries(client, db_session):
+    """Audit endpoint returns log entries with correct fields."""
+    from app.partitions.models import PartitionAuditLog
+
+    part = await _make_partition(db_session)
+
+    # Add audit log entries
+    db_session.add(PartitionAuditLog(
+        partition_id=part.id,
+        action="disarm",
+        performed_by="operator1",
+        audit_metadata={"reason": "maintenance"},
+    ))
+    db_session.add(PartitionAuditLog(
+        partition_id=part.id,
+        action="arm",
+        performed_by="operator2",
+        audit_metadata={"cameras_restored": 2},
+    ))
+    await db_session.commit()
+
+    resp = await client.get(f"/api/partitions/{part.id}/audit")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is True
+    audit = data["data"]
+    assert audit["total"] == 2
+    assert len(audit["items"]) == 2
+    actions = {item["action"] for item in audit["items"]}
+    assert actions == {"arm", "disarm"}
+    performers = {item["performed_by"] for item in audit["items"]}
+    assert performers == {"operator1", "operator2"}
+    disarm_entry = next(i for i in audit["items"] if i["action"] == "disarm")
+    assert disarm_entry["audit_metadata"] == {"reason": "maintenance"}
+
+
+@pytest.mark.asyncio
+async def test_get_partition_audit_pagination(client, db_session):
+    """Audit endpoint supports limit and offset for pagination."""
+    from app.partitions.models import PartitionAuditLog
+
+    part = await _make_partition(db_session)
+
+    # Create 5 audit entries
+    for i in range(5):
+        db_session.add(PartitionAuditLog(
+            partition_id=part.id,
+            action=f"action_{i}",
+            performed_by="tester",
+        ))
+    await db_session.commit()
+
+    # Request first page
+    resp = await client.get(f"/api/partitions/{part.id}/audit?limit=2&offset=0")
+    assert resp.status_code == 200
+    data = resp.json()
+    audit = data["data"]
+    assert audit["total"] == 5
+    assert audit["limit"] == 2
+    assert audit["offset"] == 0
+    assert len(audit["items"]) == 2
+
+    # Request second page
+    resp2 = await client.get(f"/api/partitions/{part.id}/audit?limit=2&offset=2")
+    data2 = resp2.json()
+    audit2 = data2["data"]
+    assert audit2["total"] == 5
+    assert audit2["limit"] == 2
+    assert audit2["offset"] == 2
+    assert len(audit2["items"]) == 2
+
+    # Third page (1 item)
+    resp3 = await client.get(f"/api/partitions/{part.id}/audit?limit=2&offset=4")
+    data3 = resp3.json()
+    audit3 = data3["data"]
+    assert audit3["total"] == 5
+    assert len(audit3["items"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_get_partition_audit_different_partitions_isolated(client, db_session):
+    """Audit log only returns entries for the requested partition."""
+    from app.partitions.models import PartitionAuditLog
+
+    part1 = await _make_partition(db_session, name="Partition 1")
+    part2 = await _make_partition(db_session, name="Partition 2")
+
+    db_session.add(PartitionAuditLog(
+        partition_id=part1.id,
+        action="disarm",
+        performed_by="user_a",
+    ))
+    db_session.add(PartitionAuditLog(
+        partition_id=part2.id,
+        action="arm",
+        performed_by="user_b",
+    ))
+    await db_session.commit()
+
+    resp = await client.get(f"/api/partitions/{part1.id}/audit")
+    data = resp.json()
+    assert data["success"] is True
+    audit = data["data"]
+    assert audit["total"] == 1
+    assert audit["items"][0]["action"] == "disarm"
+    assert audit["items"][0]["partition_id"] == str(part1.id)
+
+
+# ---------------------------------------------------------------------------
+# Arm / Disarm envelope verification
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_disarm_returns_api_response_envelope(client, db_session):
+    """POST /disarm returns APIResponse envelope with success and data fields."""
+    part = await _make_partition(db_session, name="Disarm Test", state="armed")
+    await db_session.commit()
+
+    resp = await client.post(
+        f"/api/partitions/{part.id}/disarm",
+        json={"disarmed_by": "tester", "reason": "test"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "success" in data
+    assert data["success"] is True
+    assert "data" in data
+    # No cameras in partition — should disarm cleanly
+    assert data["data"]["cameras_disarmed"] == 0
+
+
+@pytest.mark.asyncio
+async def test_arm_returns_api_response_envelope(client, db_session):
+    """POST /arm returns APIResponse envelope with success and data fields."""
+    part = await _make_partition(db_session, name="Arm Test", state="disarmed")
+    await db_session.commit()
+
+    resp = await client.post(
+        f"/api/partitions/{part.id}/arm",
+        json={"armed_by": "tester"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "success" in data
+    assert data["success"] is True
+    assert "data" in data
+    assert data["data"]["cameras_restored"] == 0
+
+
+@pytest.mark.asyncio
+async def test_disarm_not_found_returns_error_envelope(client, db_session):
+    """POST /disarm on non-existent partition returns APIResponse with success=False."""
+    fake_id = uuid.uuid4()
+    resp = await client.post(
+        f"/api/partitions/{fake_id}/disarm",
+        json={"disarmed_by": "tester"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is False
+    assert data["error"] is not None
