@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 05-admin-ui plan 01 — HTMX dashboard and partition detail pages
-last_updated: "2026-03-11T17:45:21.534Z"
+stopped_at: Completed 05-admin-ui plan 02 — partition form and NVR management pages
+last_updated: "2026-03-11T17:54:58.853Z"
 last_activity: 2026-03-11 — stuck-disarmed monitor + NVR health check APScheduler jobs (108 tests)
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 13
-  completed_plans: 12
+  completed_plans: 13
   percent: 100
 ---
 
@@ -67,6 +67,7 @@ Progress: [██████████] 100%
 | Phase 04-automation-alerts P01 | 12 | 2 tasks | 8 files |
 | Phase 04-automation-alerts P02 | 6 | 2 tasks | 3 files |
 | Phase 05-admin-ui P01 | 18 | 3 tasks | 12 files |
+| Phase 05-admin-ui P02 | 8 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -113,6 +114,8 @@ Recent decisions affecting current work:
 - [Phase 05-admin-ui]: Two POST endpoint suffixes (-row vs -detail) for arm/disarm to serve correct partial for dashboard vs detail page context
 - [Phase 05-admin-ui]: Native HTML <dialog> element used for modals — Pico CSS styles natively, no custom JS library needed
 - [Phase 05-admin-ui]: rearm_in_minutes computed server-side in route handler to avoid datetime math in Jinja2 templates
+- [Phase 05-admin-ui]: hx-vals JS expression collects checked camera_ids before Sync button fires — preserves selection across HTMX partial swap
+- [Phase 05-admin-ui]: POST /ui/nvrs/create proxies to API endpoint to keep password encryption in one place
 
 ### Pending Todos
 
@@ -124,6 +127,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-11T17:45:21.533Z
-Stopped at: Completed 05-admin-ui plan 01 — HTMX dashboard and partition detail pages
+Last session: 2026-03-11T17:54:58.850Z
+Stopped at: Completed 05-admin-ui plan 02 — partition form and NVR management pages
 Resume file: None

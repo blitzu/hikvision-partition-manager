@@ -93,8 +93,8 @@
 
 - [x] **UI-01**: Dashboard page (/) — table of all partitions with state badge, disarmed duration, alert highlight, ARM/DISARM quick buttons with confirmation modal; auto-refreshes every 10 seconds via HTMX
 - [x] **UI-02**: Partition detail page (/partitions/{id}) — state, camera list with detection status, ARM/DISARM button with impact modal, auto-rearm countdown, last 20 audit entries, inline edit form
-- [ ] **UI-03**: Partition create/edit page (/partitions/new, /partitions/{id}/edit) — name/description/timers fields, camera selector grouped by NVR with per-NVR sync button
-- [ ] **UI-04**: NVR management page (/nvrs) — list NVRs with status badge, add NVR form, test connectivity button (inline HTMX result), last seen timestamp
+- [x] **UI-03**: Partition create/edit page (/partitions/new, /partitions/{id}/edit) — name/description/timers fields, camera selector grouped by NVR with per-NVR sync button
+- [x] **UI-04**: NVR management page (/nvrs) — list NVRs with status badge, add NVR form, test connectivity button (inline HTMX result), last seen timestamp
 
 ### Infrastructure & Code Quality
 
@@ -190,8 +190,8 @@
 | ALRT-03 | Phase 4 | Complete |
 | UI-01 | Phase 5 | Complete |
 | UI-02 | Phase 5 | Complete |
-| UI-03 | Phase 5 | Pending |
-| UI-04 | Phase 5 | Pending |
+| UI-03 | Phase 5 | Complete |
+| UI-04 | Phase 5 | Complete |
 | INFRA-01 | Phase 6 | Pending |
 | INFRA-02 | Phase 6 | Pending |
 | INFRA-03 | Phase 6 | Pending |
