@@ -13,10 +13,14 @@ from alembic.config import Config
 from fastapi import FastAPI
 from sqlalchemy import select
 
+from apscheduler import ConflictPolicy
+from apscheduler.triggers.interval import IntervalTrigger
+
 from app.cameras.routes import router as cameras_router
 from app.core.database import async_session_factory, engine
 from app.jobs.auto_rearm import schedule_rearm
-from app.jobs.scheduler import shutdown_scheduler, start_scheduler
+from app.jobs.monitors import nvr_health_check, stuck_disarmed_monitor
+from app.jobs.scheduler import scheduler, shutdown_scheduler, start_scheduler
 from app.locations.routes import router as locations_router
 from app.nvrs.routes import router as nvrs_router
 from app.partitions.models import Partition, PartitionState
@@ -73,6 +77,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await asyncio.to_thread(_run_migrations)
     await start_scheduler()
     await _reconcile_missed_rearm_jobs()
+    # Register stuck-disarmed monitor: every 5 minutes
+    await scheduler.add_schedule(
+        stuck_disarmed_monitor,
+        IntervalTrigger(minutes=5),
+        id="stuck_disarmed_monitor",
+        conflict_policy=ConflictPolicy.replace,
+    )
+    # Register NVR health check: every 60 seconds
+    await scheduler.add_schedule(
+        nvr_health_check,
+        IntervalTrigger(seconds=60),
+        id="nvr_health_check",
+        conflict_policy=ConflictPolicy.replace,
+    )
     yield
     await shutdown_scheduler()
     await engine.dispose()
