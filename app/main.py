@@ -18,15 +18,21 @@ from apscheduler import ConflictPolicy
 from apscheduler.triggers.interval import IntervalTrigger
 
 from app.cameras.routes import router as cameras_router
+from app.core.config import settings
 from app.core.database import async_session_factory, engine
+from app.core.inflight import wait_drain
+from app.core.logging import setup_logging
 from app.jobs.auto_rearm import schedule_rearm
 from app.jobs.monitors import nvr_health_check, stuck_disarmed_monitor
-from app.jobs.scheduler import scheduler, shutdown_scheduler, start_scheduler
+from app.jobs.scheduler import scheduler
 from app.locations.routes import router as locations_router
+from app.middleware.logging import RequestLoggingMiddleware
 from app.nvrs.routes import router as nvrs_router
 from app.partitions.models import Partition, PartitionState
 from app.partitions.routes import router as partitions_router, dashboard_router
 from app.ui.routes import ui_router
+
+setup_logging(settings.LOG_LEVEL)
 
 logger = logging.getLogger(__name__)
 
@@ -77,24 +83,30 @@ async def _reconcile_missed_rearm_jobs() -> None:
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan: run migrations on startup, dispose engine on shutdown."""
     await asyncio.to_thread(_run_migrations)
-    await start_scheduler()
-    await _reconcile_missed_rearm_jobs()
-    # Register stuck-disarmed monitor: every 5 minutes
-    await scheduler.add_schedule(
-        stuck_disarmed_monitor,
-        IntervalTrigger(minutes=5),
-        id="stuck_disarmed_monitor",
-        conflict_policy=ConflictPolicy.replace,
-    )
-    # Register NVR health check: every 60 seconds
-    await scheduler.add_schedule(
-        nvr_health_check,
-        IntervalTrigger(seconds=60),
-        id="nvr_health_check",
-        conflict_policy=ConflictPolicy.replace,
-    )
-    yield
-    await shutdown_scheduler()
+    async with scheduler:
+        await scheduler.start_in_background()
+        await _reconcile_missed_rearm_jobs()
+        # Register stuck-disarmed monitor: every 5 minutes
+        await scheduler.add_schedule(
+            stuck_disarmed_monitor,
+            IntervalTrigger(minutes=5),
+            id="stuck_disarmed_monitor",
+            conflict_policy=ConflictPolicy.replace,
+        )
+        # Register NVR health check: every 60 seconds
+        await scheduler.add_schedule(
+            nvr_health_check,
+            IntervalTrigger(seconds=60),
+            id="nvr_health_check",
+            conflict_policy=ConflictPolicy.replace,
+        )
+        yield
+    remaining = await wait_drain(timeout=30.0)
+    if remaining > 0:
+        logger.warning(
+            "Shutdown forced with active ISAPI calls",
+            extra={"event": "shutdown_forced", "active_isapi_calls": remaining, "component": "http"},
+        )
     await engine.dispose()
 
 
@@ -103,6 +115,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(RequestLoggingMiddleware)
 app.include_router(locations_router)
 app.include_router(nvrs_router)
 app.include_router(cameras_router)

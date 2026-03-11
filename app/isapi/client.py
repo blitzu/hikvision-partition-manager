@@ -4,8 +4,21 @@ Phase 2 extends this class with retry logic, full Digest auth handling,
 and additional endpoints. Do not restructure this module when extending.
 """
 import xml.etree.ElementTree as ET
+from contextlib import asynccontextmanager
 
 import httpx
+
+from app.core import inflight
+
+
+@asynccontextmanager
+async def _track_inflight():
+    """Context manager to track in-flight ISAPI calls for graceful shutdown."""
+    inflight.increment()
+    try:
+        yield
+    finally:
+        inflight.decrement()
 
 
 class ISAPIClient:
@@ -26,19 +39,21 @@ class ISAPIClient:
 
     async def get_device_info(self) -> dict:
         """GET /ISAPI/System/deviceInfo — returns parsed device info dict."""
-        async with httpx.AsyncClient(**self._client_kwargs) as client:
-            resp = await client.get(f"{self.base_url}/ISAPI/System/deviceInfo")
-            resp.raise_for_status()
-            return self._parse_xml(resp.text)
+        async with _track_inflight():
+            async with httpx.AsyncClient(**self._client_kwargs) as client:
+                resp = await client.get(f"{self.base_url}/ISAPI/System/deviceInfo")
+                resp.raise_for_status()
+                return self._parse_xml(resp.text)
 
     async def get_camera_channels(self) -> list[dict]:
         """GET /ISAPI/System/Video/inputs/channels — returns list of channel dicts."""
-        async with httpx.AsyncClient(**self._client_kwargs) as client:
-            resp = await client.get(
-                f"{self.base_url}/ISAPI/System/Video/inputs/channels"
-            )
-            resp.raise_for_status()
-            return self._parse_channel_list(resp.text)
+        async with _track_inflight():
+            async with httpx.AsyncClient(**self._client_kwargs) as client:
+                resp = await client.get(
+                    f"{self.base_url}/ISAPI/System/Video/inputs/channels"
+                )
+                resp.raise_for_status()
+                return self._parse_channel_list(resp.text)
 
     def _detection_url(self, channel_no: int, detection_type: str) -> str:
         """Return the ISAPI Smart detection URL for the given channel and type."""
@@ -51,13 +66,14 @@ class ISAPIClient:
         On timeout: retries once. Second timeout re-raises TimeoutException.
         """
         url = self._detection_url(channel_no, detection_type)
-        async with httpx.AsyncClient(**self._client_kwargs) as client:
-            try:
-                resp = await client.get(url)
-            except httpx.TimeoutException:
-                resp = await client.get(url)
-            resp.raise_for_status()
-            return resp.text
+        async with _track_inflight():
+            async with httpx.AsyncClient(**self._client_kwargs) as client:
+                try:
+                    resp = await client.get(url)
+                except httpx.TimeoutException:
+                    resp = await client.get(url)
+                resp.raise_for_status()
+                return resp.text
 
     async def put_detection_config(
         self, channel_no: int, detection_type: str, xml_body: str
@@ -68,20 +84,21 @@ class ISAPIClient:
         On timeout: retries once. Second timeout re-raises TimeoutException.
         """
         url = self._detection_url(channel_no, detection_type)
-        async with httpx.AsyncClient(**self._client_kwargs) as client:
-            try:
-                resp = await client.put(
-                    url,
-                    headers={"Content-Type": "text/xml"},
-                    content=xml_body.encode(),
-                )
-            except httpx.TimeoutException:
-                resp = await client.put(
-                    url,
-                    headers={"Content-Type": "text/xml"},
-                    content=xml_body.encode(),
-                )
-            resp.raise_for_status()
+        async with _track_inflight():
+            async with httpx.AsyncClient(**self._client_kwargs) as client:
+                try:
+                    resp = await client.put(
+                        url,
+                        headers={"Content-Type": "text/xml"},
+                        content=xml_body.encode(),
+                    )
+                except httpx.TimeoutException:
+                    resp = await client.put(
+                        url,
+                        headers={"Content-Type": "text/xml"},
+                        content=xml_body.encode(),
+                    )
+                resp.raise_for_status()
 
     def _parse_xml(self, xml_text: str) -> dict:
         """Parse Hikvision XML response into a flat dict (strips namespaces)."""

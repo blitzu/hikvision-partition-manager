@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     DB_ECHO: bool = False
     ALERT_WEBHOOK_URL: str | None = None
+    POLL_INTERVAL_SECONDS: int = 300
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
