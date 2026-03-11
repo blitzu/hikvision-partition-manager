@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Phase 6 context gathered
-last_updated: "2026-03-10T19:37:45.606Z"
+stopped_at: Completed 04-automation-alerts plan 01 — APScheduler auto-rearm job
+last_updated: "2026-03-11T05:32:28.026Z"
 last_activity: 2026-03-10 — GET /api/dashboard with disarmed_minutes, overdue flag, active-first sort (96 tests)
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 13
-  completed_plans: 9
+  completed_plans: 10
   percent: 100
 ---
 
@@ -64,6 +64,7 @@ Progress: [██████████] 100%
 | Phase 03-partition-api P01 | 4 min | 5 tasks | 6 files |
 | Phase 03-partition-api P02 | 8 | 5 tasks | 4 files |
 | Phase 03-partition-api P03-03 | 5 | 3 tasks | 6 files |
+| Phase 04-automation-alerts P01 | 12 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -102,6 +103,8 @@ Recent decisions affecting current work:
 - [Phase 03-partition-api]: dashboard_router uses prefix=/api so GET /api/dashboard has correct URL without duplicated prefix
 - [Phase 03-partition-api]: disarmed_minutes computed at query time from state.last_changed_at — no stored field needed
 - [Phase 03-partition-api]: overdue flag uses >= (at or past threshold triggers alert); active-first sort uses tuple key (priority_int, name)
+- [Phase 04-automation-alerts]: APScheduler 4.x uses add_schedule (not add_job) with DateTrigger for one-shot jobs; ConflictPolicy.replace handles re-scheduling idempotently
+- [Phase 04-automation-alerts]: cancel_rearm catches ScheduleLookupError (APScheduler 4.x) — not JobLookupError; autouse conftest fixture mocks service-level schedule_rearm/cancel_rearm for test isolation
 
 ### Pending Todos
 
@@ -113,6 +116,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-10T19:37:45.603Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-infrastructure/06-CONTEXT.md
+Last session: 2026-03-11T05:32:28.024Z
+Stopped at: Completed 04-automation-alerts plan 01 — APScheduler auto-rearm job
+Resume file: None
