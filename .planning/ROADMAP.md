@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation** - Database schema, migrations, location/NVR/camera CRUD and encryption (completed 2026-03-10)
 - [x] **Phase 2: ISAPI Core Operations** - HTTP Digest client, disarm and arm operations with refcount logic (completed 2026-03-10)
 - [x] **Phase 3: Partition API** - Partition CRUD, REST API surface, audit log and state endpoints (completed 2026-03-10)
-- [ ] **Phase 4: Automation & Alerts** - Background jobs (auto-rearm, stuck monitor, NVR health) and webhook delivery
+- [x] **Phase 4: Automation & Alerts** - Background jobs (auto-rearm, stuck monitor, NVR health) and webhook delivery (completed 2026-03-11)
 - [ ] **Phase 5: Admin UI** - HTMX + Jinja2 dashboard, partition detail, editor, and NVR management pages
 - [ ] **Phase 6: Infrastructure** - Docker Compose deployment, structured logging, graceful shutdown, README
 
@@ -127,6 +127,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Foundation | 3/3 | Complete    | 2026-03-10 |
 | 2. ISAPI Core Operations | 3/3 | Complete | 2026-03-10 |
 | 3. Partition API | 3/3 | Complete   | 2026-03-10 |
-| 4. Automation & Alerts | 1/2 | In Progress|  |
+| 4. Automation & Alerts | 2/2 | Complete   | 2026-03-11 |
 | 5. Admin UI | 0/2 | Not started | - |
 | 6. Infrastructure | 0/2 | Not started | - |

@@ -67,15 +67,15 @@
 
 ### Background Jobs
 
-- [ ] **JOB-01**: Auto-rearm job fires at exact scheduled_rearm_at; calls arm logic with performed_by='system:auto_rearm'; sends webhook on completion
-- [ ] **JOB-02**: Stuck-disarmed monitor runs every 5 minutes; finds partitions where disarmed duration > alert_if_disarmed_minutes; POSTs alert webhook per partition
-- [ ] **JOB-03**: NVR health check runs every 60 seconds; pings all NVRs; updates status and last_seen_at; POSTs alert webhook when NVR transitions from online to offline
+- [x] **JOB-01**: Auto-rearm job fires at exact scheduled_rearm_at; calls arm logic with performed_by='system:auto_rearm'; sends webhook on completion
+- [x] **JOB-02**: Stuck-disarmed monitor runs every 5 minutes; finds partitions where disarmed duration > alert_if_disarmed_minutes; POSTs alert webhook per partition
+- [x] **JOB-03**: NVR health check runs every 60 seconds; pings all NVRs; updates status and last_seen_at; POSTs alert webhook when NVR transitions from online to offline
 
 ### Webhook Alerts
 
-- [ ] **ALRT-01**: Auto-rearm webhook: `{ type: 'auto_rearmed', partition_id, partition_name }`
-- [ ] **ALRT-02**: Stuck disarmed webhook: `{ type: 'partition_stuck_disarmed', partition_id, partition_name, disarmed_by, disarmed_at, minutes_elapsed, scheduled_rearm_at }`
-- [ ] **ALRT-03**: NVR offline webhook: `{ type: 'nvr_offline', nvr_id, nvr_name, location_name }`
+- [x] **ALRT-01**: Auto-rearm webhook: `{ type: 'auto_rearmed', partition_id, partition_name }`
+- [x] **ALRT-02**: Stuck disarmed webhook: `{ type: 'partition_stuck_disarmed', partition_id, partition_name, disarmed_by, disarmed_at, minutes_elapsed, scheduled_rearm_at }`
+- [x] **ALRT-03**: NVR offline webhook: `{ type: 'nvr_offline', nvr_id, nvr_name, location_name }`
 
 ### REST API
 
@@ -182,12 +182,12 @@
 | API-07 | Phase 3 | Complete |
 | API-08 | Phase 3 | Pending |
 | API-09 | Phase 3 | Pending |
-| JOB-01 | Phase 4 | Pending |
-| JOB-02 | Phase 4 | Pending |
-| JOB-03 | Phase 4 | Pending |
-| ALRT-01 | Phase 4 | Pending |
-| ALRT-02 | Phase 4 | Pending |
-| ALRT-03 | Phase 4 | Pending |
+| JOB-01 | Phase 4 | Complete |
+| JOB-02 | Phase 4 | Complete |
+| JOB-03 | Phase 4 | Complete |
+| ALRT-01 | Phase 4 | Complete |
+| ALRT-02 | Phase 4 | Complete |
+| ALRT-03 | Phase 4 | Complete |
 | UI-01 | Phase 5 | Pending |
 | UI-02 | Phase 5 | Pending |
 | UI-03 | Phase 5 | Pending |

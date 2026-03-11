@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 04-automation-alerts plan 01 — APScheduler auto-rearm job
-last_updated: "2026-03-11T05:32:28.026Z"
-last_activity: 2026-03-10 — GET /api/dashboard with disarmed_minutes, overdue flag, active-first sort (96 tests)
+stopped_at: Completed 04-automation-alerts plan 02 — stuck-disarmed monitor and NVR health check jobs
+last_updated: "2026-03-11T05:37:14Z"
+last_activity: 2026-03-11 — stuck-disarmed monitor + NVR health check APScheduler jobs (108 tests)
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 13
-  completed_plans: 10
-  percent: 100
+  completed_plans: 11
+  percent: 85
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** Disarming a partition disables detection on all member cameras via ISAPI; arming restores exact saved state, respecting multi-partition refcount logic.
-**Current focus:** Phase 3 - Partition Management & State
+**Current focus:** Phase 4 - Automation & Alerts
 
 ## Current Position
 
-Phase: 3 of 6 (Partition API) — Plan 3 of 3 complete
-Plan: 3 complete in current phase
-Status: Phase 3 complete — Dashboard endpoint with alert logic, overdue flags, and active-first sorting
-Last activity: 2026-03-10 — GET /api/dashboard with disarmed_minutes, overdue flag, active-first sort (96 tests)
+Phase: 4 of 6 (Automation & Alerts) — Plan 2 of 2 complete
+Plan: 2 complete in current phase
+Status: Phase 4 complete — All monitor jobs (stuck-disarmed + NVR health check) implemented and registered
+Last activity: 2026-03-11 — stuck-disarmed monitor + NVR health check APScheduler jobs (108 tests)
 
 Progress: [██████████] 100%
 
@@ -65,6 +65,7 @@ Progress: [██████████] 100%
 | Phase 03-partition-api P02 | 8 | 5 tasks | 4 files |
 | Phase 03-partition-api P03-03 | 5 | 3 tasks | 6 files |
 | Phase 04-automation-alerts P01 | 12 | 2 tasks | 8 files |
+| Phase 04-automation-alerts P02 | 6 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,9 @@ Recent decisions affecting current work:
 - [Phase 03-partition-api]: overdue flag uses >= (at or past threshold triggers alert); active-first sort uses tuple key (priority_int, name)
 - [Phase 04-automation-alerts]: APScheduler 4.x uses add_schedule (not add_job) with DateTrigger for one-shot jobs; ConflictPolicy.replace handles re-scheduling idempotently
 - [Phase 04-automation-alerts]: cancel_rearm catches ScheduleLookupError (APScheduler 4.x) — not JobLookupError; autouse conftest fixture mocks service-level schedule_rearm/cancel_rearm for test isolation
+- [Phase 04-automation-alerts]: IntervalTrigger + add_schedule used for recurring monitor jobs; add_job is one-shot only in APScheduler 4.x
+- [Phase 04-automation-alerts]: Module-level dicts (_nvr_prev_status, _nvr_last_offline_alert) track NVR transition state across scheduler cycles; reset in tests via .clear()
+- [Phase 04-automation-alerts]: nvr_offline cooldown re-fires after 5-minute window even when NVR stays offline (continuous suppressed-then-re-alert pattern)
 
 ### Pending Todos
 
@@ -116,6 +120,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-11T05:32:28.024Z
-Stopped at: Completed 04-automation-alerts plan 01 — APScheduler auto-rearm job
+Last session: 2026-03-11T05:37:14Z
+Stopped at: Completed 04-automation-alerts plan 02 — stuck-disarmed monitor and NVR health check jobs
 Resume file: None
