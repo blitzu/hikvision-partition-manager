@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 04-automation-alerts plan 02 — stuck-disarmed monitor and NVR health check jobs
-last_updated: "2026-03-11T05:41:41.649Z"
+stopped_at: Completed 05-admin-ui plan 01 — HTMX dashboard and partition detail pages
+last_updated: "2026-03-11T17:45:21.534Z"
 last_activity: 2026-03-11 — stuck-disarmed monitor + NVR health check APScheduler jobs (108 tests)
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 13
-  completed_plans: 11
+  completed_plans: 12
   percent: 100
 ---
 
@@ -66,6 +66,7 @@ Progress: [██████████] 100%
 | Phase 03-partition-api P03-03 | 5 | 3 tasks | 6 files |
 | Phase 04-automation-alerts P01 | 12 | 2 tasks | 8 files |
 | Phase 04-automation-alerts P02 | 6 | 2 tasks | 3 files |
+| Phase 05-admin-ui P01 | 18 | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,9 @@ Recent decisions affecting current work:
 - [Phase 04-automation-alerts]: IntervalTrigger + add_schedule used for recurring monitor jobs; add_job is one-shot only in APScheduler 4.x
 - [Phase 04-automation-alerts]: Module-level dicts (_nvr_prev_status, _nvr_last_offline_alert) track NVR transition state across scheduler cycles; reset in tests via .clear()
 - [Phase 04-automation-alerts]: nvr_offline cooldown re-fires after 5-minute window even when NVR stays offline (continuous suppressed-then-re-alert pattern)
+- [Phase 05-admin-ui]: Two POST endpoint suffixes (-row vs -detail) for arm/disarm to serve correct partial for dashboard vs detail page context
+- [Phase 05-admin-ui]: Native HTML <dialog> element used for modals — Pico CSS styles natively, no custom JS library needed
+- [Phase 05-admin-ui]: rearm_in_minutes computed server-side in route handler to avoid datetime math in Jinja2 templates
 
 ### Pending Todos
 
@@ -120,6 +124,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-11T05:37:14Z
-Stopped at: Completed 04-automation-alerts plan 02 — stuck-disarmed monitor and NVR health check jobs
+Last session: 2026-03-11T17:45:21.533Z
+Stopped at: Completed 05-admin-ui plan 01 — HTMX dashboard and partition detail pages
 Resume file: None
