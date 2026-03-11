@@ -1,0 +1,89 @@
+<!-- State section -->
+<section>
+  <h3>Current State</h3>
+  <p>
+    <span class="state-dot state-{{ state.state or 'armed' }}"></span>
+    <strong>{{ (state.state or 'armed')|upper }}</strong>
+  </p>
+  {% if state.last_changed_at %}
+  <p>Last changed:
+    {{ state.last_changed_at.strftime('%Y-%m-%d %H:%M') }}
+    {% if state.last_changed_by %}by {{ state.last_changed_by }}{% endif %}
+  </p>
+  {% endif %}
+  {% if rearm_in_minutes is not none %}
+  <p>Auto-rearms in {{ rearm_in_minutes }}m</p>
+  {% endif %}
+  {% if state.error_detail %}
+  <p class="error" style="color: var(--pico-color-red-500, #c0392b);">{{ state.error_detail }}</p>
+  {% endif %}
+</section>
+
+<!-- Camera table -->
+<section>
+  <h3>Cameras ({{ state.cameras|length }})</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Channel</th>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Disarmed By</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for camera in state.cameras %}
+      <tr>
+        <td>{{ camera.channel_no }}</td>
+        <td>{{ camera.name or '—' }}</td>
+        <td>
+          {% if camera.detection_snapshot is none %}
+            <span class="state-dot state-armed"></span>Armed
+          {% else %}
+            <span class="state-dot state-disarmed"></span>Disarmed
+          {% endif %}
+        </td>
+        <td>
+          {% if camera.disarm_count > 0 %}
+            {{ camera.disarm_count }} partition(s)
+          {% else %}
+            —
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<!-- Audit log -->
+<section>
+  <h3>Recent Activity</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Action</th>
+        <th>Performed By</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in audit.items %}
+      <tr>
+        <td>{{ entry.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td>{{ entry.action }}</td>
+        <td>{{ entry.performed_by }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <!-- Pagination -->
+  <nav>
+    {% if audit.offset > 0 %}
+    <a href="/ui/partitions/{{ partition_id }}/detail-partial?offset={{ audit.offset - audit.limit }}">&#8592; Prev</a>
+    {% endif %}
+    {% if audit.offset + audit.limit < audit.total %}
+    <a href="/ui/partitions/{{ partition_id }}/detail-partial?offset={{ audit.offset + audit.limit }}" style="float:right">Next &#8594;</a>
+    {% endif %}
+  </nav>
+</section>

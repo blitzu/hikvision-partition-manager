@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}{{ partition.name }} — Partition Manager{% endblock %}
+
+{% block content %}
+<h2>
+  {{ partition.name }}
+  <a href="/partitions/{{ partition.id }}/edit" role="button" class="outline" style="float:right">Edit</a>
+</h2>
+
+<!-- Static partition metadata — loaded once, not polled -->
+<section>
+  {% if partition.description %}<p>{{ partition.description }}</p>{% endif %}
+  <dl>
+    {% if partition.auto_rearm_minutes %}
+    <dt>Auto-rearm</dt><dd>{{ partition.auto_rearm_minutes }} minutes</dd>
+    {% endif %}
+    {% if partition.alert_if_disarmed_minutes %}
+    <dt>Alert threshold</dt><dd>{{ partition.alert_if_disarmed_minutes }} minutes disarmed</dd>
+    {% endif %}
+  </dl>
+</section>
+
+<!-- ARM / DISARM buttons -->
+<div style="margin-bottom: 1rem;">
+  <button onclick="document.getElementById('disarm-modal-detail').showModal()" style="margin-right:8px">DISARM</button>
+  <button class="outline" onclick="document.getElementById('arm-modal-detail').showModal()">ARM</button>
+</div>
+
+<!-- Disarm modal -->
+<dialog id="disarm-modal-detail">
+  <article>
+    <header><strong>Disarm {{ partition.name }}?</strong></header>
+    <p>This will disable detection on {{ state.cameras|length }} camera(s).</p>
+    <form hx-post="/ui/partitions/{{ partition.id }}/disarm-detail"
+          hx-target="#detail-body"
+          hx-swap="innerHTML"
+          hx-on::after-request="document.getElementById('disarm-modal-detail').close()">
+      <label>Reason (optional)
+        <input type="text" name="reason" placeholder="Enter reason">
+      </label>
+      <input type="hidden" name="disarmed_by" value="operator">
+      <footer>
+        <button type="submit">Confirm DISARM</button>
+        <button type="button" onclick="document.getElementById('disarm-modal-detail').close()">Cancel</button>
+      </footer>
+    </form>
+  </article>
+</dialog>
+
+<!-- Arm modal -->
+<dialog id="arm-modal-detail">
+  <article>
+    <header><strong>Arm {{ partition.name }}?</strong></header>
+    <p>This will restore detection on all member cameras.</p>
+    <form hx-post="/ui/partitions/{{ partition.id }}/arm-detail"
+          hx-target="#detail-body"
+          hx-swap="innerHTML"
+          hx-on::after-request="document.getElementById('arm-modal-detail').close()">
+      <input type="hidden" name="armed_by" value="operator">
+      <footer>
+        <button type="submit">Confirm ARM</button>
+        <button type="button" onclick="document.getElementById('arm-modal-detail').close()">Cancel</button>
+      </footer>
+    </form>
+  </article>
+</dialog>
+
+<!-- Polled detail body -->
+<div id="detail-body"
+     hx-get="/ui/partitions/{{ partition.id }}/detail-partial"
+     hx-trigger="every 10s"
+     hx-swap="innerHTML">
+  {% include "partials/partition_detail_body.html" %}
+</div>
+{% endblock %}
