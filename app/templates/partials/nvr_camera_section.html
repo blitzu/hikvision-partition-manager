@@ -1,0 +1,25 @@
+<div id="nvr-section-{{ nvr.id }}">
+  <h4>
+    {{ nvr.name }} <small>({{ nvr.ip_address }})</small>
+    <button type="button"
+            hx-get="/ui/nvrs/{{ nvr.id }}/cameras/sync"
+            hx-target="#nvr-section-{{ nvr.id }}"
+            hx-swap="outerHTML"
+            hx-vals='js:{"selected": [...document.querySelectorAll("input[name=camera_ids]:checked")].map(e=>e.value).join(",")}'
+            style="margin-left: 0.5rem;">Sync</button>
+  </h4>
+
+  {% if cameras %}
+    <fieldset>
+      {% for cam in cameras %}
+        <label>
+          <input type="checkbox" name="camera_ids" value="{{ cam.id }}"
+                 {% if cam.id in selected_camera_ids %} checked{% endif %}>
+          Ch {{ cam.channel_no }}{% if cam.name %} — {{ cam.name }}{% endif %}
+        </label>
+      {% endfor %}
+    </fieldset>
+  {% else %}
+    <p><em>No cameras synced yet — use the Sync button to fetch cameras from this NVR.</em></p>
+  {% endif %}
+</div>

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}{% if mode == 'create' %}New Partition{% else %}Edit {{ partition.name }}{% endif %} — Partition Manager{% endblock %}
+
+{% block content %}
+<h2>{% if mode == 'create' %}New Partition{% else %}Edit {{ partition.name }}{% endif %}</h2>
+
+{% if error %}
+<article style="background: var(--pico-del-color, #f8d7da); padding: 1rem; margin-bottom: 1rem;">
+  <strong>Error:</strong> {{ error }}
+</article>
+{% endif %}
+
+<form method="post" action="{% if mode == 'create' %}/ui/partitions/create{% else %}/ui/partitions/{{ partition.id }}/update{% endif %}">
+
+  <label>
+    Name
+    <input type="text" name="name" value="{{ partition.name if partition else '' }}" required>
+  </label>
+
+  <label>
+    Description
+    <textarea name="description">{{ partition.description if partition else '' }}</textarea>
+  </label>
+
+  <label>
+    Auto-rearm after (minutes)
+    <input type="number" name="auto_rearm_minutes"
+           value="{{ partition.auto_rearm_minutes if partition and partition.auto_rearm_minutes is not none else '' }}"
+           min="1" placeholder="Leave blank to disable">
+  </label>
+
+  <label>
+    Alert if disarmed longer than (minutes)
+    <input type="number" name="alert_if_disarmed_minutes"
+           value="{{ partition.alert_if_disarmed_minutes if partition and partition.alert_if_disarmed_minutes is not none else '' }}"
+           min="1" placeholder="Leave blank to disable">
+  </label>
+
+  <h3>Cameras</h3>
+  {% if nvr_sections %}
+    {% for section in nvr_sections %}
+      {% with nvr=section.nvr, cameras=section.cameras, selected_camera_ids=selected_camera_ids %}
+        {% include "partials/nvr_camera_section.html" %}
+      {% endwith %}
+    {% endfor %}
+  {% else %}
+    <p><em>No NVRs found. Add an NVR first.</em></p>
+  {% endif %}
+
+  <div style="margin-top: 1.5rem; display: flex; gap: 1rem; align-items: center;">
+    <button type="submit">{% if mode == 'create' %}Create Partition{% else %}Save Changes{% endif %}</button>
+    <a href="{{ '/partitions/' + partition.id|string if partition else '/' }}">Cancel</a>
+  </div>
+
+</form>
+{% endblock %}
