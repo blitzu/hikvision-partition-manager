@@ -1,0 +1,20 @@
+{% if cameras %}
+<table>
+  <thead>
+    <tr>
+      <th>Channel</th>
+      <th>Name</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for cam in cameras %}
+    <tr>
+      <td>{{ cam.channel_no }}</td>
+      <td>{{ cam.name or '—' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p><em>No cameras synced. Use the camera sync feature from the partition form.</em></p>
+{% endif %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}NVR Management — Partition Manager{% endblock %}
+
+{% block content %}
+<h2>NVR Management</h2>
+
+{% if error %}
+<article style="background: var(--pico-del-color, #f8d7da); padding: 1rem; margin-bottom: 1rem;">
+  <strong>Error:</strong> {{ error }}
+</article>
+{% endif %}
+
+<details>
+  <summary>Add NVR</summary>
+  <form method="post" action="/ui/nvrs/create" style="margin-top: 1rem;">
+    <label>
+      Location
+      <select name="location_id" required>
+        {% for loc in locations %}
+          <option value="{{ loc.id }}">{{ loc.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Name <input type="text" name="name" required></label>
+    <label>IP Address <input type="text" name="ip_address" required placeholder="192.168.1.100"></label>
+    <label>Port <input type="number" name="port" value="8000"></label>
+    <label>Username <input type="text" name="username" required></label>
+    <label>Password <input type="password" name="password" required></label>
+    <button type="submit">Add NVR</button>
+  </form>
+</details>
+
+{% if nvrs %}
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>IP Address</th>
+      <th>Status</th>
+      <th>Last Seen</th>
+      <th>Connectivity</th>
+      <th>Cameras</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for nvr in nvrs %}
+    <tr>
+      <td>{{ nvr.name }}</td>
+      <td>{{ nvr.ip_address }}:{{ nvr.port }}</td>
+      <td>
+        <span class="state-dot state-{{ 'armed' if nvr.status == 'online' else 'error' }}"></span>
+        {{ nvr.status or 'unknown' }}
+      </td>
+      <td>
+        {% if nvr.last_seen_at %}
+          {{ nvr.last_seen_at.strftime('%Y-%m-%d %H:%M') }}
+        {% else %}
+          Never
+        {% endif %}
+      </td>
+      <td>
+        <button hx-get="/ui/nvrs/{{ nvr.id }}/test"
+                hx-target="#test-result-{{ nvr.id }}"
+                hx-swap="innerHTML">Test</button>
+        <span id="test-result-{{ nvr.id }}"></span>
+      </td>
+      <td>
+        <button hx-get="/ui/nvrs/{{ nvr.id }}/detail"
+                hx-target="#nvr-cameras-{{ nvr.id }}"
+                hx-swap="innerHTML">Show Cameras</button>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="6" id="nvr-cameras-{{ nvr.id }}"></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p><em>No NVRs configured yet. Use the form above to add one.</em></p>
+{% endif %}
+
+{% endblock %}
