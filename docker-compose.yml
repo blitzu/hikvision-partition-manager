@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppassword
+      POSTGRES_DB: partitions
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d partitions"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    env_file: .env
+    environment:
+      # Override DATABASE_URL so the app container reaches the db service (not localhost)
+      DATABASE_URL: postgresql+asyncpg://appuser:apppassword@db:5432/partitions
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    stop_grace_period: 35s
+
+volumes:
+  pgdata:
