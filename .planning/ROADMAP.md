@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Partition API** - Partition CRUD, REST API surface, audit log and state endpoints (completed 2026-03-10)
 - [x] **Phase 4: Automation & Alerts** - Background jobs (auto-rearm, stuck monitor, NVR health) and webhook delivery (completed 2026-03-11)
 - [x] **Phase 5: Admin UI** - HTMX + Jinja2 dashboard, partition detail, editor, and NVR management pages (completed 2026-03-11)
-- [ ] **Phase 6: Infrastructure** - Docker Compose deployment, structured logging, graceful shutdown, README
+- [x] **Phase 6: Infrastructure** - Docker Compose deployment, structured logging, graceful shutdown, README (completed 2026-03-11)
 
 ## Phase Details
 
@@ -129,4 +129,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. Partition API | 3/3 | Complete   | 2026-03-10 |
 | 4. Automation & Alerts | 2/2 | Complete   | 2026-03-11 |
 | 5. Admin UI | 2/2 | Complete   | 2026-03-11 |
-| 6. Infrastructure | 1/2 | In Progress|  |
+| 6. Infrastructure | 2/2 | Complete   | 2026-03-11 |

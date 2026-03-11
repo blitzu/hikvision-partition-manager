@@ -101,10 +101,10 @@
 - [x] **INFRA-01**: docker-compose.yml with app + postgres services, volume for data persistence, health checks; starts with zero manual steps
 - [x] **INFRA-02**: Multi-stage Dockerfile, non-root user, minimal image
 - [x] **INFRA-03**: .env.example with all required variables: DATABASE_URL, ENCRYPTION_KEY, ALERT_WEBHOOK_URL, POLL_INTERVAL_SECONDS, LOG_LEVEL, BASE_URL
-- [ ] **INFRA-04**: README.md with 3-step setup, env vars table, API curl examples, VMS integration guide, refcount logic explanation
-- [ ] **INFRA-05**: Structured JSON logging with timestamp, level, request_id, component fields
-- [ ] **INFRA-06**: Graceful shutdown: complete in-flight ISAPI calls before exit
-- [ ] **INFRA-07**: All database queries parameterized (no string interpolation)
+- [x] **INFRA-04**: README.md with 3-step setup, env vars table, API curl examples, VMS integration guide, refcount logic explanation
+- [x] **INFRA-05**: Structured JSON logging with timestamp, level, request_id, component fields
+- [x] **INFRA-06**: Graceful shutdown: complete in-flight ISAPI calls before exit
+- [x] **INFRA-07**: All database queries parameterized (no string interpolation)
 
 ## v2 Requirements
 
@@ -195,10 +195,10 @@
 | INFRA-01 | Phase 6 | Complete |
 | INFRA-02 | Phase 6 | Complete |
 | INFRA-03 | Phase 6 | Complete |
-| INFRA-04 | Phase 6 | Pending |
-| INFRA-05 | Phase 6 | Pending |
-| INFRA-06 | Phase 6 | Pending |
-| INFRA-07 | Phase 6 | Pending |
+| INFRA-04 | Phase 6 | Complete |
+| INFRA-05 | Phase 6 | Complete |
+| INFRA-06 | Phase 6 | Complete |
+| INFRA-07 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 68 total

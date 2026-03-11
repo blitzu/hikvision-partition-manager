@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 06-infrastructure plan 01 — Dockerfile, docker-compose.yml, .env.example
-last_updated: "2026-03-11T18:56:05.539Z"
+stopped_at: Completed 06-infrastructure plan 02 — JSON logging, graceful shutdown drain, README
+last_updated: "2026-03-11T19:02:35.129Z"
 last_activity: 2026-03-11 — stuck-disarmed monitor + NVR health check APScheduler jobs (108 tests)
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 15
-  completed_plans: 14
+  completed_plans: 15
   percent: 100
 ---
 
@@ -69,6 +69,7 @@ Progress: [██████████] 100%
 | Phase 05-admin-ui P01 | 18 | 3 tasks | 12 files |
 | Phase 05-admin-ui P02 | 8 min | 2 tasks | 5 files |
 | Phase 06-infrastructure P01 | 1 | 2 tasks | 3 files |
+| Phase 06-infrastructure P02 | 8 | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -119,6 +120,9 @@ Recent decisions affecting current work:
 - [Phase 05-admin-ui]: POST /ui/nvrs/create proxies to API endpoint to keep password encryption in one place
 - [Phase 06-infrastructure]: python:3.12-slim (not alpine) for Docker base image — asyncpg requires glibc
 - [Phase 06-infrastructure]: docker-compose stop_grace_period: 35s = 30s app timeout + 5s buffer; DATABASE_URL overridden in environment block to use service DNS hostname 'db'
+- [Phase 06-infrastructure]: Lazy import of request_id_var inside JsonFormatter.format() avoids circular import between app.core.logging and app.middleware.logging
+- [Phase 06-infrastructure]: asyncio.Event() created lazily in inflight module — Python 3.10+ DeprecationWarning when Event created outside running loop
+- [Phase 06-infrastructure]: Manual logging.Handler in test_access_log_middleware — TestClient anyio portal thread runs outside caplog propagation chain
 
 ### Pending Todos
 
@@ -130,6 +134,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-11T18:56:05.537Z
-Stopped at: Completed 06-infrastructure plan 01 — Dockerfile, docker-compose.yml, .env.example
+Last session: 2026-03-11T19:02:35.127Z
+Stopped at: Completed 06-infrastructure plan 02 — JSON logging, graceful shutdown drain, README
 Resume file: None
