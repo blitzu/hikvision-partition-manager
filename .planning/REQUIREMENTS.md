@@ -98,9 +98,9 @@
 
 ### Infrastructure & Code Quality
 
-- [ ] **INFRA-01**: docker-compose.yml with app + postgres services, volume for data persistence, health checks; starts with zero manual steps
-- [ ] **INFRA-02**: Multi-stage Dockerfile, non-root user, minimal image
-- [ ] **INFRA-03**: .env.example with all required variables: DATABASE_URL, ENCRYPTION_KEY, ALERT_WEBHOOK_URL, POLL_INTERVAL_SECONDS, LOG_LEVEL, BASE_URL
+- [x] **INFRA-01**: docker-compose.yml with app + postgres services, volume for data persistence, health checks; starts with zero manual steps
+- [x] **INFRA-02**: Multi-stage Dockerfile, non-root user, minimal image
+- [x] **INFRA-03**: .env.example with all required variables: DATABASE_URL, ENCRYPTION_KEY, ALERT_WEBHOOK_URL, POLL_INTERVAL_SECONDS, LOG_LEVEL, BASE_URL
 - [ ] **INFRA-04**: README.md with 3-step setup, env vars table, API curl examples, VMS integration guide, refcount logic explanation
 - [ ] **INFRA-05**: Structured JSON logging with timestamp, level, request_id, component fields
 - [ ] **INFRA-06**: Graceful shutdown: complete in-flight ISAPI calls before exit
@@ -192,9 +192,9 @@
 | UI-02 | Phase 5 | Complete |
 | UI-03 | Phase 5 | Complete |
 | UI-04 | Phase 5 | Complete |
-| INFRA-01 | Phase 6 | Pending |
-| INFRA-02 | Phase 6 | Pending |
-| INFRA-03 | Phase 6 | Pending |
+| INFRA-01 | Phase 6 | Complete |
+| INFRA-02 | Phase 6 | Complete |
+| INFRA-03 | Phase 6 | Complete |
 | INFRA-04 | Phase 6 | Pending |
 | INFRA-05 | Phase 6 | Pending |
 | INFRA-06 | Phase 6 | Pending |

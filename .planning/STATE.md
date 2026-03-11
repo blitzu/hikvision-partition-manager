@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 05-admin-ui plan 02 — partition form and NVR management pages
-last_updated: "2026-03-11T17:54:58.853Z"
+stopped_at: Completed 06-infrastructure plan 01 — Dockerfile, docker-compose.yml, .env.example
+last_updated: "2026-03-11T18:56:05.539Z"
 last_activity: 2026-03-11 — stuck-disarmed monitor + NVR health check APScheduler jobs (108 tests)
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 13
-  completed_plans: 13
+  total_plans: 15
+  completed_plans: 14
   percent: 100
 ---
 
@@ -68,6 +68,7 @@ Progress: [██████████] 100%
 | Phase 04-automation-alerts P02 | 6 | 2 tasks | 3 files |
 | Phase 05-admin-ui P01 | 18 | 3 tasks | 12 files |
 | Phase 05-admin-ui P02 | 8 min | 2 tasks | 5 files |
+| Phase 06-infrastructure P01 | 1 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -116,6 +117,8 @@ Recent decisions affecting current work:
 - [Phase 05-admin-ui]: rearm_in_minutes computed server-side in route handler to avoid datetime math in Jinja2 templates
 - [Phase 05-admin-ui]: hx-vals JS expression collects checked camera_ids before Sync button fires — preserves selection across HTMX partial swap
 - [Phase 05-admin-ui]: POST /ui/nvrs/create proxies to API endpoint to keep password encryption in one place
+- [Phase 06-infrastructure]: python:3.12-slim (not alpine) for Docker base image — asyncpg requires glibc
+- [Phase 06-infrastructure]: docker-compose stop_grace_period: 35s = 30s app timeout + 5s buffer; DATABASE_URL overridden in environment block to use service DNS hostname 'db'
 
 ### Pending Todos
 
@@ -127,6 +130,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-11T17:54:58.850Z
-Stopped at: Completed 05-admin-ui plan 02 — partition form and NVR management pages
+Last session: 2026-03-11T18:56:05.537Z
+Stopped at: Completed 06-infrastructure plan 01 — Dockerfile, docker-compose.yml, .env.example
 Resume file: None
