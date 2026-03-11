@@ -1,0 +1,56 @@
+<tr id="row-{{ p.id }}" {% if p.overdue %}class="overdue-row"{% endif %}>
+  <td>{{ p.name }}</td>
+  <td>
+    <span class="state-dot state-{{ p.state or 'armed' }}"></span>
+    {{ (p.state or 'armed')|upper }}
+  </td>
+  <td>
+    {% if p.disarmed_minutes is not none %}
+      {% if p.overdue %}&#9888; {% endif %}{{ p.disarmed_minutes|int }}m
+    {% endif %}
+  </td>
+  <td>
+    <a href="/partitions/{{ p.id }}" role="button" class="outline" style="margin-right:4px">View</a>
+    <button onclick="document.getElementById('disarm-modal-{{ p.id }}').showModal()" style="margin-right:4px">DISARM</button>
+    <button class="outline" onclick="document.getElementById('arm-modal-{{ p.id }}').showModal()">ARM</button>
+  </td>
+</tr>
+
+<!-- Disarm modal -->
+<dialog id="disarm-modal-{{ p.id }}">
+  <article>
+    <header><strong>Disarm {{ p.name }}?</strong></header>
+    <p>This will disable detection on all member cameras.</p>
+    <form hx-post="/ui/partitions/{{ p.id }}/disarm-row"
+          hx-target="#row-{{ p.id }}"
+          hx-swap="outerHTML"
+          hx-on::after-request="document.getElementById('disarm-modal-{{ p.id }}').close()">
+      <label>Reason (optional)
+        <input type="text" name="reason" placeholder="Enter reason">
+      </label>
+      <input type="hidden" name="disarmed_by" value="operator">
+      <footer>
+        <button type="submit">Confirm DISARM</button>
+        <button type="button" onclick="document.getElementById('disarm-modal-{{ p.id }}').close()">Cancel</button>
+      </footer>
+    </form>
+  </article>
+</dialog>
+
+<!-- Arm modal -->
+<dialog id="arm-modal-{{ p.id }}">
+  <article>
+    <header><strong>Arm {{ p.name }}?</strong></header>
+    <p>This will restore detection on all member cameras.</p>
+    <form hx-post="/ui/partitions/{{ p.id }}/arm-row"
+          hx-target="#row-{{ p.id }}"
+          hx-swap="outerHTML"
+          hx-on::after-request="document.getElementById('arm-modal-{{ p.id }}').close()">
+      <input type="hidden" name="armed_by" value="operator">
+      <footer>
+        <button type="submit">Confirm ARM</button>
+        <button type="button" onclick="document.getElementById('arm-modal-{{ p.id }}').close()">Cancel</button>
+      </footer>
+    </form>
+  </article>
+</dialog>
