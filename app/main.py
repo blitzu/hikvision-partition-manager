@@ -11,6 +11,7 @@ from typing import AsyncGenerator
 from alembic import command
 from alembic.config import Config
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 
 from apscheduler import ConflictPolicy
@@ -25,6 +26,7 @@ from app.locations.routes import router as locations_router
 from app.nvrs.routes import router as nvrs_router
 from app.partitions.models import Partition, PartitionState
 from app.partitions.routes import router as partitions_router, dashboard_router
+from app.ui.routes import ui_router
 
 logger = logging.getLogger(__name__)
 
@@ -106,3 +108,5 @@ app.include_router(nvrs_router)
 app.include_router(cameras_router)
 app.include_router(partitions_router)
 app.include_router(dashboard_router)
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.include_router(ui_router)

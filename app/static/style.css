@@ -1,0 +1,20 @@
+/* State badge dot */
+.state-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.state-armed    { background: var(--pico-color-green-500,  #2db04b); }
+.state-disarmed { background: var(--pico-color-yellow-500, #f0a500); }
+.state-partial  { background: var(--pico-color-orange-500, #e07000); }
+.state-error    { background: var(--pico-color-red-500,    #c0392b); }
+
+/* Overdue row tint */
+tr.overdue-row { background-color: rgba(240, 165, 0, 0.12); }
+
+/* Modal sizing — relies on Pico's built-in <dialog> styles */
+dialog article { min-width: 320px; max-width: 480px; }
