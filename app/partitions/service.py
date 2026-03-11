@@ -21,6 +21,7 @@ from app.cameras.models import Camera
 from app.nvrs.models import NVRDevice
 from app.isapi.client import ISAPIClient
 from app.core.crypto import decrypt_password
+from app.jobs.auto_rearm import cancel_rearm, schedule_rearm
 from app.partitions.schemas import (
     DisarmResponse,
     ArmResponse,
@@ -275,7 +276,11 @@ async def disarm_partition(
 
     # 11. Commit and return
     await db.commit()
-    
+
+    # 12. Schedule auto-rearm job if applicable
+    if state.scheduled_rearm_at is not None:
+        await schedule_rearm(partition_id, state.scheduled_rearm_at)
+
     return DisarmResponse(
         cameras_disarmed=cameras_disarmed,
         cameras_kept_disarmed_by_other_partition=cameras_kept_disarmed_by_other_partition,
@@ -293,6 +298,10 @@ async def arm_partition(
     partition = await db.get(Partition, partition_id)
     if not partition:
         raise HTTPException(status_code=404, detail="Partition not found")
+
+    # Cancel any pending auto-rearm job before DB writes — done unconditionally
+    # so even a failed or idempotent arm clears the scheduled job.
+    await cancel_rearm(partition_id)
 
     # 2. Load or create PartitionState
     stmt = select(PartitionState).where(PartitionState.partition_id == partition_id)

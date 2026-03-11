@@ -6,7 +6,9 @@ approach requires pytest-asyncio 0.24+ with explicit loop_scope; we use
 function-scoped here for compatibility with pytest-asyncio 0.23.x.
 """
 import os
+from unittest.mock import AsyncMock, patch
 
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -32,6 +34,24 @@ TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
     "postgresql+asyncpg://appuser:apppassword@localhost:5432/test_partitions",
 )
+
+
+@pytest.fixture(autouse=True)
+def mock_scheduler_calls(request):
+    """Auto-mock schedule_rearm and cancel_rearm in partition service for all tests.
+
+    This prevents calls to the APScheduler instance (which requires a running DB
+    connection) during integration/API tests. Tests in test_jobs_auto_rearm.py
+    already mock the scheduler module directly and are excluded here.
+    """
+    if "test_jobs_auto_rearm" in request.fspath.basename:
+        # Those tests mock the scheduler themselves
+        yield
+        return
+
+    with patch("app.partitions.service.schedule_rearm", new_callable=AsyncMock) as mock_sched, \
+         patch("app.partitions.service.cancel_rearm", new_callable=AsyncMock) as mock_cancel:
+        yield {"schedule_rearm": mock_sched, "cancel_rearm": mock_cancel}
 
 
 @pytest_asyncio.fixture(scope="function")
