@@ -111,11 +111,11 @@ Plans:
   2. Every log line is valid JSON containing timestamp, level, request_id, and component fields; NVR passwords never appear in logs
   3. Sending SIGTERM to the container lets in-flight ISAPI calls finish before the process exits
   4. README.md enables a new operator to set up and integrate the service using only its contents
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 06-01: Dockerfile, docker-compose.yml, .env.example, and health checks
-- [ ] 06-02: Structured JSON logging, graceful shutdown, parameterized queries audit, and README
+- [ ] 06-01-PLAN.md — Dockerfile (multi-stage, non-root), docker-compose.yml (app + postgres + health check), .env.example
+- [ ] 06-02-PLAN.md — Structured JSON logging, graceful shutdown drain, INFRA-07 SQL audit, README.md
 
 ## Progress
 
