@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     BASE_URL: str = "http://localhost:8000"
     LOG_LEVEL: str = "INFO"
     DB_ECHO: bool = False
+    ALERT_WEBHOOK_URL: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
