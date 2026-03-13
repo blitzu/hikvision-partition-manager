@@ -163,6 +163,71 @@ async def test_put_detection_config_timeout_retries_once_then_raises(
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Gap 1: ISAPI-01 + ISAPI-04 — DigestAuth instance and verify=False
+# ---------------------------------------------------------------------------
+
+
+def test_client_uses_digest_auth_and_no_tls_verify() -> None:
+    """ISAPIClient uses DigestAuth and disables TLS verification for self-signed NVR certs."""
+    isapi_client = ISAPIClient(host="192.168.1.1", port=80, username="admin", password="secret")
+
+    assert isinstance(isapi_client._auth, httpx.DigestAuth)
+    assert isapi_client._client_kwargs["verify"] is False
+    assert isapi_client._client_kwargs["auth"] is isapi_client._auth
+
+
+# ---------------------------------------------------------------------------
+# Gap 2: ISAPI-02 — Timeout settings
+# ---------------------------------------------------------------------------
+
+
+def test_client_timeout_settings() -> None:
+    """ISAPIClient configures Timeout with connect=5.0 and read=10.0."""
+    isapi_client = ISAPIClient(host="192.168.1.1", port=80, username="admin", password="secret")
+
+    timeout = isapi_client._client_kwargs["timeout"]
+    assert isinstance(timeout, httpx.Timeout)
+    assert timeout.connect == 5.0
+    assert timeout.read == 10.0
+
+
+# ---------------------------------------------------------------------------
+# Gap 3: ISAPI-03/PUT — non-timeout error raises immediately without retry
+# ---------------------------------------------------------------------------
+
+
+async def test_put_detection_config_non_timeout_error_raises_immediately(
+    client: ISAPIClient,
+) -> None:
+    """PUT: non-timeout HTTP error (404) raises immediately — no retry."""
+    mock_response = MagicMock()
+    mock_response.status_code = 404
+    mock_response.raise_for_status = MagicMock(
+        side_effect=httpx.HTTPStatusError(
+            "Not Found",
+            request=MagicMock(),
+            response=mock_response,
+        )
+    )
+
+    mock_http_client = AsyncMock()
+    mock_http_client.put = AsyncMock(return_value=mock_response)
+    mock_http_client.__aenter__ = AsyncMock(return_value=mock_http_client)
+    mock_http_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("httpx.AsyncClient", return_value=mock_http_client):
+        with pytest.raises(httpx.HTTPStatusError):
+            await client.put_detection_config(1, "MotionDetection", MINIMAL_XML)
+
+    assert mock_http_client.put.call_count == 1
+
+
+# ---------------------------------------------------------------------------
+# URL pattern — all detection types
+# ---------------------------------------------------------------------------
+
+
 @pytest.mark.parametrize(
     "detection_type",
     ["MotionDetection", "LineDetection", "FieldDetection", "shelteralarm"],
