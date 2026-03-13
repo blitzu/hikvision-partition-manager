@@ -181,6 +181,33 @@ async def test_graceful_shutdown_timeout():
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# INFRA-04: README.md required sections
+# ---------------------------------------------------------------------------
+
+
+def test_readme_has_required_sections():
+    """README.md contains all required sections: Quick Start, env vars, VMS guide, refcount, troubleshooting."""
+    required_sections = [
+        "Quick Start",
+        "Environment Variables",
+        "VMS Integration Guide",
+        "Refcount",
+        "Troubleshooting",
+    ]
+    required_content = [
+        "curl",          # API examples
+        "docker compose",  # 3-step setup
+    ]
+    with open("README.md") as f:
+        content = f.read()
+
+    for section in required_sections:
+        assert section in content, f"README.md missing required section: {section}"
+    for keyword in required_content:
+        assert keyword in content, f"README.md missing required content: {keyword}"
+
+
 def test_env_example_has_all_vars():
     """.env.example contains all 6 required environment variable keys."""
     required = {
