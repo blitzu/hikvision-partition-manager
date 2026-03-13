@@ -94,6 +94,31 @@ async def partitions_partial(request: Request, db: AsyncSession = Depends(get_db
 
 
 # ---------------------------------------------------------------------------
+# Partition create form (must be registered before /partitions/{partition_id}
+# so that "new" is not captured as a UUID path parameter)
+# ---------------------------------------------------------------------------
+
+
+@ui_router.get("/partitions/new", response_class=HTMLResponse)
+async def partition_create_form(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    nvr_sections = await _get_nvrs_with_cameras(db)
+    return templates.TemplateResponse(
+        "partition_form.html",
+        {
+            "request": request,
+            "partition": None,
+            "nvr_sections": nvr_sections,
+            "mode": "create",
+            "selected_camera_ids": set(),
+            "error": None,
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
 # Partition detail
 # ---------------------------------------------------------------------------
 
@@ -265,27 +290,8 @@ async def arm_detail(
 
 
 # ---------------------------------------------------------------------------
-# Partition create / edit form
+# Partition edit form
 # ---------------------------------------------------------------------------
-
-
-@ui_router.get("/partitions/new", response_class=HTMLResponse)
-async def partition_create_form(
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-):
-    nvr_sections = await _get_nvrs_with_cameras(db)
-    return templates.TemplateResponse(
-        "partition_form.html",
-        {
-            "request": request,
-            "partition": None,
-            "nvr_sections": nvr_sections,
-            "mode": "create",
-            "selected_camera_ids": set(),
-            "error": None,
-        },
-    )
 
 
 @ui_router.get("/partitions/{partition_id}/edit", response_class=HTMLResponse)
