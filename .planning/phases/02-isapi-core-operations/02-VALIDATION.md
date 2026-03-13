@@ -49,14 +49,16 @@ created: 2026-03-13
 | 02-02-01 | 02 | 2 | DARM-01/02/03 (disarm success) | integration | `python3 -m pytest tests/test_disarm.py::test_disarm_success -v` | ✅ | ✅ green |
 | 02-02-01 | 02 | 2 | DARM-02 (NVR pre-check) | integration | `python3 -m pytest tests/test_disarm.py::test_disarm_nvr_failure -v` | ✅ | ✅ green |
 | 02-02-01 | 02 | 2 | DARM-04 (snapshot not overwritten) | integration | `python3 -m pytest tests/test_disarm.py::test_disarm_snapshot_protection -v` | ✅ | ✅ green |
-| 02-02-01 | 02 | 2 | DARM-08 (idempotent) | integration | `python3 -m pytest tests/test_disarm.py::test_disarm_idempotent -v` | ✅ | ✅ green |
+| 02-02-01 | 02 | 2 | DARM-08 (audit log on disarm) | integration | `python3 -m pytest tests/test_disarm.py::test_disarm_success -v` | ✅ | ✅ green |
+| 02-02-01 | 02 | 2 | DARM-01 (idempotent no-op) | integration | `python3 -m pytest tests/test_disarm.py::test_disarm_idempotent -v` | ✅ | ✅ green |
+| 02-02-01 | 02 | 2 | DARM-07 (schedule_rearm called on disarm) | integration | `python3 -m pytest tests/test_disarm.py::test_disarm_calls_schedule_rearm_when_auto_rearm_minutes_set -v` | ✅ | ✅ green |
 | 02-02-01 | 02 | 2 | DARM-09 (kept_disarmed counter) | integration | `python3 -m pytest tests/test_disarm.py::test_disarm_camera_already_disarmed_by_other_partition -v` | ✅ | ✅ green |
 | 02-02-01 | 02 | 2 | DARM-10 (partial failure + state=partial) | integration | `python3 -m pytest tests/test_disarm.py::test_disarm_partial_failure -v` | ✅ | ✅ green |
-| 02-03-01 | 03 | 3 | ARM-01/02/03 (single-partition arm) | integration | `python3 -m pytest tests/test_arm.py::test_arm_success_single_partition -v` | ✅ | ✅ green |
+| 02-03-01 | 03 | 3 | ARM-01/02/03/07 (single-partition arm) | integration | `python3 -m pytest tests/test_arm.py::test_arm_success_single_partition -v` | ✅ | ✅ green |
 | 02-03-01 | 03 | 3 | ARM-04 (multi-partition refcount) | integration | `python3 -m pytest tests/test_arm.py::test_arm_multi_partition_stay_disarmed -v` | ✅ | ✅ green |
 | 02-03-01 | 03 | 3 | ARM-01 (idempotent) | integration | `python3 -m pytest tests/test_arm.py::test_arm_idempotent -v` | ✅ | ✅ green |
-| 02-03-01 | 03 | 3 | ARM-05 (arm from partial state) | integration | `python3 -m pytest tests/test_arm.py::test_arm_from_partial_state_succeeds -v` | ✅ | ✅ green |
-| 02-03-01 | 03 | 3 | ARM-05 (arm from error state) | integration | `python3 -m pytest tests/test_arm.py::test_arm_from_error_state_succeeds -v` | ✅ | ✅ green |
+| 02-03-01 | 03 | 3 | ARM-01 (arm from partial/error state) | integration | `python3 -m pytest tests/test_arm.py::test_arm_from_partial_state_succeeds tests/test_arm.py::test_arm_from_error_state_succeeds -v` | ✅ | ✅ green |
+| 02-03-01 | 03 | 3 | ARM-05 (cancel_rearm called on arm) | integration | `python3 -m pytest tests/test_arm.py::test_arm_calls_cancel_rearm -v` | ✅ | ✅ green |
 | 02-03-01 | 03 | 3 | ARM-06 (audit log on arm) | integration | `python3 -m pytest tests/test_arm.py::test_arm_creates_audit_log_entry -v` | ✅ | ✅ green |
 | 02-03-01 | 03 | 3 | ARM-07 (restore failure) | integration | `python3 -m pytest tests/test_arm.py::test_arm_restore_failure -v` | ✅ | ✅ green |
 
@@ -96,3 +98,17 @@ All phase behaviors have automated verification.
 | Gaps found | 6 |
 | Resolved | 6 |
 | Escalated | 0 |
+
+## Validation Audit 2026-03-14
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 2 |
+| Resolved | 2 |
+| Escalated | 0 |
+
+Audit notes:
+- Added `test_disarm_calls_schedule_rearm_when_auto_rearm_minutes_set` → explicit DARM-07 coverage
+- Added `test_arm_calls_cancel_rearm` → explicit ARM-05 coverage
+- Fixed DARM-08 label (was pointing to idempotent test; corrected to test_disarm_success which verifies audit log)
+- Fixed ARM-05 label (was pointing to arm-from-partial/error tests; corrected to cancel_rearm test)
