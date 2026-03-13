@@ -260,6 +260,48 @@ async def test_arm_creates_audit_log_entry(client, db_session, mock_isapi):
 
 
 @pytest.mark.asyncio
+async def test_arm_calls_cancel_rearm(client, db_session, mock_isapi, mock_scheduler_calls):
+    """JOB-01: arm_partition must call cancel_rearm unconditionally to remove any pending auto-rearm job."""
+    loc = Location(name="L", timezone="UTC")
+    db_session.add(loc)
+    await db_session.flush()
+    nvr = NVRDevice(
+        location_id=loc.id, name="N", ip_address="1.2.3.4",
+        username="u", password_encrypted=encrypt_password("p")
+    )
+    db_session.add(nvr)
+    await db_session.flush()
+    cam = Camera(nvr_id=nvr.id, channel_no=1)
+    db_session.add(cam)
+    await db_session.flush()
+    part = Partition(name="P")
+    db_session.add(part)
+    await db_session.flush()
+    db_session.add(PartitionCamera(partition_id=part.id, camera_id=cam.id))
+    db_session.add(PartitionState(
+        partition_id=part.id,
+        state="disarmed",
+        scheduled_rearm_at=datetime.now(timezone.utc),
+    ))
+    db_session.add(CameraDetectionSnapshot(
+        camera_id=cam.id, partition_id=part.id, snapshot_data={"MotionDetection": "<xml/>"}
+    ))
+    db_session.add(CameraDisarmRefcount(camera_id=cam.id, disarmed_by_partitions=[part.id]))
+    await db_session.commit()
+
+    resp = await client.post(f"/api/partitions/{part.id}/arm", json={"armed_by": "test-user"})
+
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+
+    # JOB-01: cancel_rearm must have been called with the partition_id
+    mock_cancel = mock_scheduler_calls["cancel_rearm"]
+    mock_cancel.assert_called_once()
+    call_args = mock_cancel.call_args
+    assert call_args.args[0] == part.id
+
+
+@pytest.mark.asyncio
 async def test_arm_restore_failure(client, db_session, monkeypatch):
     class FailingPutMock(MockISAPIClient):
         async def put_detection_config(self, *args, **kwargs):

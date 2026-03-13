@@ -271,3 +271,86 @@ async def test_deliver_webhook_no_op_when_url_not_configured(monkeypatch):
         with patch("httpx.AsyncClient") as mock_client_cls:
             await auto_rearm.deliver_webhook({"type": "test"})
             mock_client_cls.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# _reconcile_missed_rearm_jobs tests (JOB-01 startup reconciliation)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_reconcile_missed_rearm_jobs_re_registers_missing_schedules():
+    """JOB-01: On startup, _reconcile_missed_rearm_jobs re-registers any missing auto-rearm jobs."""
+    from apscheduler import ScheduleLookupError
+    from datetime import datetime, timezone
+
+    partition_id = uuid.uuid4()
+    scheduled_rearm_at = datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+
+    # Build a mock PartitionState row
+    mock_state = MagicMock()
+    mock_state.partition_id = partition_id
+    mock_state.scheduled_rearm_at = scheduled_rearm_at
+
+    # DB returns one disarmed partition with scheduled_rearm_at set
+    mock_db = AsyncMock()
+    mock_db.__aenter__ = AsyncMock(return_value=mock_db)
+    mock_db.__aexit__ = AsyncMock(return_value=False)
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = [mock_state]
+    mock_db.execute = AsyncMock(return_value=mock_result)
+
+    # Scheduler has no existing schedule for this partition — raises on get_schedule.
+    # _reconcile_missed_rearm_jobs does "from app.jobs.scheduler import scheduler" locally,
+    # so we patch the attribute on that module directly.
+    mock_scheduler = MagicMock()
+    mock_scheduler.get_schedule = AsyncMock(
+        side_effect=ScheduleLookupError(str(partition_id))
+    )
+
+    mock_schedule_rearm = AsyncMock()
+
+    with patch("app.main.async_session_factory", return_value=mock_db):
+        with patch("app.jobs.scheduler.scheduler", mock_scheduler):
+            with patch("app.main.schedule_rearm", mock_schedule_rearm):
+                from app.main import _reconcile_missed_rearm_jobs
+                await _reconcile_missed_rearm_jobs()
+
+    # schedule_rearm must have been called with the correct partition_id and run_at
+    mock_schedule_rearm.assert_called_once_with(partition_id, scheduled_rearm_at)
+
+
+@pytest.mark.asyncio
+async def test_reconcile_missed_rearm_jobs_skips_existing_schedules():
+    """JOB-01: On startup, _reconcile_missed_rearm_jobs skips partitions that already have a scheduler entry."""
+    from datetime import datetime, timezone
+
+    partition_id = uuid.uuid4()
+    scheduled_rearm_at = datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+
+    mock_state = MagicMock()
+    mock_state.partition_id = partition_id
+    mock_state.scheduled_rearm_at = scheduled_rearm_at
+
+    mock_db = AsyncMock()
+    mock_db.__aenter__ = AsyncMock(return_value=mock_db)
+    mock_db.__aexit__ = AsyncMock(return_value=False)
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = [mock_state]
+    mock_db.execute = AsyncMock(return_value=mock_result)
+
+    # Scheduler already has a schedule — get_schedule succeeds (returns a schedule object).
+    # Patch app.jobs.scheduler.scheduler so the local import inside the function picks it up.
+    mock_scheduler = MagicMock()
+    mock_scheduler.get_schedule = AsyncMock(return_value=MagicMock())
+
+    mock_schedule_rearm = AsyncMock()
+
+    with patch("app.main.async_session_factory", return_value=mock_db):
+        with patch("app.jobs.scheduler.scheduler", mock_scheduler):
+            with patch("app.main.schedule_rearm", mock_schedule_rearm):
+                from app.main import _reconcile_missed_rearm_jobs
+                await _reconcile_missed_rearm_jobs()
+
+    # schedule_rearm must NOT have been called — job already exists
+    mock_schedule_rearm.assert_not_called()

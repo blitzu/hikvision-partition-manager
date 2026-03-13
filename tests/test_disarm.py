@@ -272,6 +272,53 @@ async def test_disarm_camera_already_disarmed_by_other_partition(client, db_sess
 
 
 @pytest.mark.asyncio
+async def test_disarm_calls_schedule_rearm_when_auto_rearm_minutes_set(client, db_session, mock_isapi, mock_scheduler_calls):
+    """JOB-01: disarm_partition must call schedule_rearm when auto_rearm_minutes is set."""
+    loc = Location(name="Test Location", timezone="UTC")
+    db_session.add(loc)
+    await db_session.flush()
+
+    nvr = NVRDevice(
+        location_id=loc.id,
+        name="Test NVR",
+        ip_address="1.2.3.4",
+        port=80,
+        username="admin",
+        password_encrypted=encrypt_password("password"),
+        status="unknown",
+    )
+    db_session.add(nvr)
+    await db_session.flush()
+
+    cam = Camera(nvr_id=nvr.id, channel_no=1, name="Cam 1")
+    db_session.add(cam)
+    await db_session.flush()
+
+    # Partition has auto_rearm_minutes set — schedule_rearm must be called after disarm
+    part = Partition(name="Auto Rearm Partition", auto_rearm_minutes=30)
+    db_session.add(part)
+    await db_session.flush()
+
+    pc = PartitionCamera(partition_id=part.id, camera_id=cam.id)
+    db_session.add(pc)
+    await db_session.commit()
+
+    resp = await client.post(
+        f"/api/partitions/{part.id}/disarm",
+        json={"disarmed_by": "test-user", "reason": "testing"},
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+
+    # JOB-01: schedule_rearm must have been called with the correct partition_id
+    mock_sched = mock_scheduler_calls["schedule_rearm"]
+    mock_sched.assert_called_once()
+    call_args = mock_sched.call_args
+    assert call_args.args[0] == part.id
+
+
+@pytest.mark.asyncio
 async def test_disarm_partial_failure(client, db_session, monkeypatch):
     # Mock where first camera succeeds, second fails
     class PartialMockISAPIClient:

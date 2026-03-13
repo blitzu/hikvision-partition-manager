@@ -492,3 +492,121 @@ async def test_nvr_health_check_commits_after_all_nvrs_processed():
                     await monitors.nvr_health_check()
 
     db.commit.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# Lifespan job registration tests (JOB-02, JOB-03)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_lifespan_registers_stuck_disarmed_monitor_with_5_minute_interval():
+    """JOB-02: The stuck-disarmed monitor must be registered with IntervalTrigger(minutes=5)."""
+    from apscheduler import ConflictPolicy
+    from apscheduler.triggers.interval import IntervalTrigger
+    from app.jobs.monitors import stuck_disarmed_monitor
+
+    add_schedule_calls = []
+
+    mock_scheduler = MagicMock()
+
+    async def fake_add_schedule(func, trigger, id, conflict_policy):
+        add_schedule_calls.append({
+            "func": func,
+            "trigger": trigger,
+            "id": id,
+            "conflict_policy": conflict_policy,
+        })
+
+    mock_scheduler.add_schedule = fake_add_schedule
+    mock_scheduler.start_in_background = AsyncMock()
+    mock_scheduler.__aenter__ = AsyncMock(return_value=mock_scheduler)
+    mock_scheduler.__aexit__ = AsyncMock(return_value=False)
+
+    # Patch all blocking dependencies so lifespan proceeds without real DB/scheduler
+    mock_db = AsyncMock()
+    mock_db.__aenter__ = AsyncMock(return_value=mock_db)
+    mock_db.__aexit__ = AsyncMock(return_value=False)
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = []
+    mock_db.execute = AsyncMock(return_value=mock_result)
+
+    with patch("app.main.scheduler", mock_scheduler):
+        with patch("app.main.asyncio.to_thread", AsyncMock()):
+            with patch("app.main.async_session_factory", return_value=mock_db):
+                with patch("app.main.wait_drain", AsyncMock(return_value=0)):
+                    with patch("app.main.engine") as mock_engine:
+                        mock_engine.dispose = AsyncMock()
+                        # Drive the lifespan context manager through startup
+                        from app.main import lifespan, app as fastapi_app
+                        async with lifespan(fastapi_app):
+                            pass
+
+    # Find the call that registered stuck_disarmed_monitor
+    stuck_call = next(
+        (c for c in add_schedule_calls if c["func"] is stuck_disarmed_monitor),
+        None,
+    )
+    assert stuck_call is not None, "stuck_disarmed_monitor was not registered"
+    assert stuck_call["id"] == "stuck_disarmed_monitor"
+    assert stuck_call["conflict_policy"] == ConflictPolicy.replace
+
+    trigger = stuck_call["trigger"]
+    assert isinstance(trigger, IntervalTrigger), f"Expected IntervalTrigger, got {type(trigger)}"
+    # IntervalTrigger exposes interval components as direct attributes
+    assert trigger.minutes == 5, f"Expected minutes=5, got {trigger.minutes}"
+
+
+@pytest.mark.asyncio
+async def test_lifespan_registers_nvr_health_check_with_60_second_interval():
+    """JOB-03: The NVR health check must be registered with IntervalTrigger(seconds=60)."""
+    from apscheduler import ConflictPolicy
+    from apscheduler.triggers.interval import IntervalTrigger
+    from app.jobs.monitors import nvr_health_check
+
+    add_schedule_calls = []
+
+    mock_scheduler = MagicMock()
+
+    async def fake_add_schedule(func, trigger, id, conflict_policy):
+        add_schedule_calls.append({
+            "func": func,
+            "trigger": trigger,
+            "id": id,
+            "conflict_policy": conflict_policy,
+        })
+
+    mock_scheduler.add_schedule = fake_add_schedule
+    mock_scheduler.start_in_background = AsyncMock()
+    mock_scheduler.__aenter__ = AsyncMock(return_value=mock_scheduler)
+    mock_scheduler.__aexit__ = AsyncMock(return_value=False)
+
+    mock_db = AsyncMock()
+    mock_db.__aenter__ = AsyncMock(return_value=mock_db)
+    mock_db.__aexit__ = AsyncMock(return_value=False)
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = []
+    mock_db.execute = AsyncMock(return_value=mock_result)
+
+    with patch("app.main.scheduler", mock_scheduler):
+        with patch("app.main.asyncio.to_thread", AsyncMock()):
+            with patch("app.main.async_session_factory", return_value=mock_db):
+                with patch("app.main.wait_drain", AsyncMock(return_value=0)):
+                    with patch("app.main.engine") as mock_engine:
+                        mock_engine.dispose = AsyncMock()
+                        from app.main import lifespan, app as fastapi_app
+                        async with lifespan(fastapi_app):
+                            pass
+
+    nvr_call = next(
+        (c for c in add_schedule_calls if c["func"] is nvr_health_check),
+        None,
+    )
+    assert nvr_call is not None, "nvr_health_check was not registered"
+    assert nvr_call["id"] == "nvr_health_check"
+    assert nvr_call["conflict_policy"] == ConflictPolicy.replace
+
+    trigger = nvr_call["trigger"]
+    assert isinstance(trigger, IntervalTrigger), f"Expected IntervalTrigger, got {type(trigger)}"
+    # IntervalTrigger exposes interval components as direct attributes
+    assert trigger.seconds == 60, f"Expected seconds=60, got {trigger.seconds}"
