@@ -1,10 +1,11 @@
 ---
 phase: 1
 slug: foundation
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: compliant
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-03-10
+audited: 2026-03-13
 ---
 
 # Phase 1 — Validation Strategy
@@ -38,13 +39,13 @@ created: 2026-03-10
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 1-01-01 | 01 | 0 | DATA-01..09 | integration | `pytest tests/test_schema.py -x -q` | ❌ W0 | ⬜ pending |
-| 1-01-02 | 01 | 1 | DATA-01..09 | integration | `pytest tests/test_schema.py -x -q` | ❌ W0 | ⬜ pending |
-| 1-02-01 | 02 | 1 | NVR-01 | integration | `pytest tests/test_locations.py -x -q` | ❌ W0 | ⬜ pending |
-| 1-02-02 | 02 | 1 | NVR-02, NVR-06 | integration | `pytest tests/test_nvrs.py::test_password_encrypted tests/test_nvrs.py::test_password_not_in_response -x -q` | ❌ W0 | ⬜ pending |
-| 1-02-03 | 02 | 1 | NVR-03, NVR-05 | unit | `pytest tests/test_nvrs.py::test_connectivity tests/test_nvrs.py::test_last_seen_updated -x -q` | ❌ W0 | ⬜ pending |
-| 1-03-01 | 03 | 2 | NVR-04 | integration | `pytest tests/test_cameras.py::test_sync_upsert -x -q` | ❌ W0 | ⬜ pending |
-| 1-03-02 | 03 | 2 | NVR-03, NVR-05 | unit | `pytest tests/test_nvrs.py::test_connectivity -x -q` | ❌ W0 | ⬜ pending |
+| 1-01-01 | 01 | 0 | DATA-01..09 | integration | `pytest tests/test_schema.py -x -q` | ✅ | ✅ green |
+| 1-01-02 | 01 | 1 | DATA-01..09 | integration | `pytest tests/test_schema.py -x -q` | ✅ | ✅ green |
+| 1-02-01 | 02 | 1 | NVR-01 | integration | `pytest tests/test_locations.py -x -q` | ✅ | ✅ green |
+| 1-02-02 | 02 | 1 | NVR-02, NVR-06 | integration | `pytest tests/test_nvrs.py -x -q` | ✅ | ✅ green |
+| 1-02-03 | 02 | 1 | NVR-03, NVR-05 | unit | `pytest tests/test_nvrs.py -x -q` | ✅ | ✅ green |
+| 1-03-01 | 03 | 2 | NVR-04 | integration | `pytest tests/test_cameras.py -x -q` | ✅ | ✅ green |
+| 1-03-02 | 03 | 2 | NVR-03, NVR-05 | unit | `pytest tests/test_nvrs.py -x -q` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -54,14 +55,14 @@ created: 2026-03-10
 
 All test infrastructure is new (greenfield project):
 
-- [ ] `tests/conftest.py` — engine (session-scoped), db_session (function-scoped with rollback), client (AsyncClient with dependency override)
-- [ ] `tests/mocks.py` — MockISAPIClient with get_device_info and get_camera_channels
-- [ ] `tests/test_schema.py` — DATA-01 through DATA-09 table existence tests (9 tables, correct columns)
-- [ ] `tests/test_locations.py` — NVR-01 location CRUD + timezone validation
-- [ ] `tests/test_nvrs.py` — NVR-02 (encryption), NVR-03 (connectivity), NVR-05 (last_seen_at), NVR-06 (password not in response)
-- [ ] `tests/test_cameras.py` — NVR-04 sync + upsert dedup (re-sync doesn't duplicate)
-- [ ] Framework install: `pytest>=8.0 pytest-asyncio>=0.23 httpx>=0.27` added to `pyproject.toml` dev dependencies
-- [ ] Test PostgreSQL: `TEST_DATABASE_URL` in `.env.test` pointing to a test DB (or `docker compose up -d postgres`)
+- [x] `tests/conftest.py` — engine (session-scoped), db_session (function-scoped with rollback), client (AsyncClient with dependency override)
+- [x] `tests/mocks.py` — MockISAPIClient with get_device_info and get_camera_channels
+- [x] `tests/test_schema.py` — DATA-01 through DATA-09 table existence tests (9 tests)
+- [x] `tests/test_locations.py` — NVR-01 location CRUD + timezone validation (6 tests)
+- [x] `tests/test_nvrs.py` — NVR-02 (encryption), NVR-03 (connectivity), NVR-05 (last_seen_at), NVR-06 (password not in response) (12 tests)
+- [x] `tests/test_cameras.py` — NVR-04 sync + upsert dedup (6 tests)
+- [x] Framework install: `pytest>=8.0 pytest-asyncio>=0.23 httpx>=0.27` in `pyproject.toml`
+- [x] `asyncio_mode = "auto"` in `[tool.pytest.ini_options]`
 
 ---
 
@@ -77,11 +78,18 @@ All test infrastructure is new (greenfield project):
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 30s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-03-13 (retroactive audit — all tests confirmed green during phase execution)
+
+## Validation Audit 2026-03-13
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 7 |
+| Escalated | 0 |
