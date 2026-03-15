@@ -28,11 +28,11 @@
 
 ### Virtual Partition CRUD
 
-- [ ] **PART-01**: Operator can create a partition with name, description, timers, and an initial list of camera_ids
-- [ ] **PART-02**: Operator can list all partitions with their current state
+- [x] **PART-01**: Operator can create a partition with name, description, timers, and an initial list of camera_ids
+- [x] **PART-02**: Operator can list all partitions with their current state
 - [x] **PART-03**: Operator can retrieve partition detail: cameras (with NVR info), state, per-camera refcount, last 20 audit entries
-- [ ] **PART-04**: Operator can update a partition's name, description, timers, and camera membership
-- [ ] **PART-05**: Operator can delete a partition only when its state is armed
+- [x] **PART-04**: Operator can update a partition's name, description, timers, and camera membership
+- [x] **PART-05**: Operator can delete a partition only when its state is armed
 
 ### Disarm Operation
 
@@ -80,14 +80,14 @@
 ### REST API
 
 - [x] **API-01**: All responses use envelope: `{ success: bool, data: any, error: string|null }`
-- [ ] **API-02**: Location CRUD endpoints (POST /api/locations, GET /api/locations, POST /api/locations/{id}/nvrs, GET /api/locations/{id}/nvrs)
-- [ ] **API-03**: NVR endpoints (GET /api/nvrs/{id}/test, GET /api/nvrs/{id}/cameras/sync)
-- [ ] **API-04**: Partition CRUD endpoints (POST/GET /api/partitions, GET/PATCH/DELETE /api/partitions/{id})
+- [x] **API-02**: Location CRUD endpoints (POST /api/locations, GET /api/locations, POST /api/locations/{id}/nvrs, GET /api/locations/{id}/nvrs)
+- [x] **API-03**: NVR endpoints (GET /api/nvrs/{id}/test, GET /api/nvrs/{id}/cameras/sync)
+- [x] **API-04**: Partition CRUD endpoints (POST/GET /api/partitions, GET/PATCH/DELETE /api/partitions/{id})
 - [x] **API-05**: Partition control endpoints (POST /api/partitions/{id}/disarm, POST /api/partitions/{id}/arm)
 - [x] **API-06**: Partition state endpoint (GET /api/partitions/{id}/state) with per-camera detection status
 - [x] **API-07**: Audit log endpoint (GET /api/partitions/{id}/audit?limit&offset)
-- [ ] **API-08**: Dashboard endpoint (GET /api/dashboard) with all partitions, disarmed duration, alert flag
-- [ ] **API-09**: All endpoints validate input and return 422 with clear error messages on invalid input
+- [x] **API-08**: Dashboard endpoint (GET /api/dashboard) with all partitions, disarmed duration, alert flag
+- [x] **API-09**: All endpoints validate input and return 422 with clear error messages on invalid input
 
 ### Admin UI
 
@@ -146,42 +146,42 @@
 | NVR-04 | Phase 1 | Complete |
 | NVR-05 | Phase 1 | Complete |
 | NVR-06 | Phase 1 | Complete |
-| ISAPI-01 | Phase 2 | Complete |
-| ISAPI-02 | Phase 2 | Complete |
-| ISAPI-03 | Phase 2 | Complete |
-| ISAPI-04 | Phase 2 | Complete |
-| ISAPI-05 | Phase 2 | Complete |
-| DARM-01 | Phase 2 | Pending |
-| DARM-02 | Phase 2 | Pending |
-| DARM-03 | Phase 2 | Pending |
-| DARM-04 | Phase 2 | Pending |
-| DARM-05 | Phase 2 | Pending |
-| DARM-06 | Phase 2 | Pending |
-| DARM-07 | Phase 2 | Pending |
-| DARM-08 | Phase 2 | Pending |
-| DARM-09 | Phase 2 | Pending |
-| DARM-10 | Phase 2 | Pending |
-| ARM-01 | Phase 2 | Pending |
-| ARM-02 | Phase 2 | Pending |
-| ARM-03 | Phase 2 | Pending |
-| ARM-04 | Phase 2 | Pending |
-| ARM-05 | Phase 2 | Pending |
-| ARM-06 | Phase 2 | Pending |
-| ARM-07 | Phase 2 | Pending |
-| PART-01 | Phase 3 | Pending |
-| PART-02 | Phase 3 | Pending |
+| ISAPI-01 | Phase 8 (gap) | Pending |
+| ISAPI-02 | Phase 8 (gap) | Pending |
+| ISAPI-03 | Phase 7 (gap) | Pending |
+| ISAPI-04 | Phase 8 (gap) | Pending |
+| ISAPI-05 | Phase 8 (gap) | Pending |
+| DARM-01 | Phase 8 (gap) | Pending |
+| DARM-02 | Phase 8 (gap) | Pending |
+| DARM-03 | Phase 8 (gap) | Pending |
+| DARM-04 | Phase 8 (gap) | Pending |
+| DARM-05 | Phase 8 (gap) | Pending |
+| DARM-06 | Phase 8 (gap) | Pending |
+| DARM-07 | Phase 8 (gap) | Pending |
+| DARM-08 | Phase 8 (gap) | Pending |
+| DARM-09 | Phase 8 (gap) | Pending |
+| DARM-10 | Phase 8 (gap) | Pending |
+| ARM-01 | Phase 8 (gap) | Pending |
+| ARM-02 | Phase 8 (gap) | Pending |
+| ARM-03 | Phase 8 (gap) | Pending |
+| ARM-04 | Phase 8 (gap) | Pending |
+| ARM-05 | Phase 8 (gap) | Pending |
+| ARM-06 | Phase 8 (gap) | Pending |
+| ARM-07 | Phase 8 (gap) | Pending |
+| PART-01 | Phase 3 | Complete |
+| PART-02 | Phase 3 | Complete |
 | PART-03 | Phase 3 | Complete |
-| PART-04 | Phase 3 | Pending |
-| PART-05 | Phase 3 | Pending |
+| PART-04 | Phase 3 | Complete |
+| PART-05 | Phase 3 | Complete |
 | API-01 | Phase 3 | Complete |
-| API-02 | Phase 3 | Pending |
-| API-03 | Phase 3 | Pending |
-| API-04 | Phase 3 | Pending |
+| API-02 | Phase 3 | Complete |
+| API-03 | Phase 3 | Complete |
+| API-04 | Phase 3 | Complete |
 | API-05 | Phase 3 | Complete |
 | API-06 | Phase 3 | Complete |
 | API-07 | Phase 3 | Complete |
-| API-08 | Phase 3 | Pending |
-| API-09 | Phase 3 | Pending |
+| API-08 | Phase 3 | Complete |
+| API-09 | Phase 3 | Complete |
 | JOB-01 | Phase 4 | Complete |
 | JOB-02 | Phase 4 | Complete |
 | JOB-03 | Phase 4 | Complete |
@@ -204,7 +204,9 @@
 - v1 requirements: 68 total
 - Mapped to phases: 68
 - Unmapped: 0
+- Pending gap closure (Phases 7–8): 22 (ISAPI-01..05, DARM-01..10, ARM-01..07)
 
 ---
 *Requirements defined: 2026-03-10*
+*Last updated: 2026-03-15 — gap closure phases 7–8 added; PART-01/02/04/05 and API-02/03/04/08/09 stale checkboxes corrected to [x]*
 *Last updated: 2026-03-10 after roadmap creation*

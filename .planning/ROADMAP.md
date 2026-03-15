@@ -18,6 +18,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Automation & Alerts** - Background jobs (auto-rearm, stuck monitor, NVR health) and webhook delivery (completed 2026-03-11)
 - [x] **Phase 5: Admin UI** - HTMX + Jinja2 dashboard, partition detail, editor, and NVR management pages (completed 2026-03-11)
 - [x] **Phase 6: Infrastructure** - Docker Compose deployment, structured logging, graceful shutdown, README (completed 2026-03-11)
+- [ ] **Phase 7: ISAPI Retry Fix & Deployment Hardening** - Add retry-on-timeout to all ISAPI client methods; fix hardcoded BASE_URL in UI self-calls; wire POLL_INTERVAL_SECONDS config to scheduler
+- [ ] **Phase 8: Phase 02 Retroverification** - Run verifier against Phase 02 scope to produce 02-VERIFICATION.md, formally closing DARM-01..10, ARM-01..07, ISAPI-01..05
 
 ## Phase Details
 
@@ -117,10 +119,35 @@ Plans:
 - [ ] 06-01-PLAN.md — Dockerfile (multi-stage, non-root), docker-compose.yml (app + postgres + health check), .env.example
 - [ ] 06-02-PLAN.md — Structured JSON logging, graceful shutdown drain, INFRA-07 SQL audit, README.md
 
+### Phase 7: ISAPI Retry Fix & Deployment Hardening
+**Goal**: All ISAPI client methods retry once on timeout; UI self-calls use configured BASE_URL; POLL_INTERVAL_SECONDS config drives scheduler intervals
+**Depends on**: Phase 6
+**Requirements**: ISAPI-03
+**Gap Closure**: Closes gaps from v1.0 audit — ISAPI-03 code gap, BASE_URL integration issue, POLL_INTERVAL_SECONDS inert config
+**Success Criteria** (what must be TRUE):
+  1. A timeout on `get_device_info` or `get_camera_channels` retries once before raising, matching the behavior of `get_detection_config` and `put_detection_config`
+  2. All four UI httpx self-calls read `settings.BASE_URL` instead of a hardcoded string
+  3. `stuck_disarmed_monitor` runs at the interval derived from `settings.POLL_INTERVAL_SECONDS`; NVR health check uses its own fixed interval (or a separate config value)
+
+Plans:
+- [ ] 07-01-PLAN.md — Add retry-on-timeout to get_device_info and get_camera_channels; fix BASE_URL in ui/routes.py; wire POLL_INTERVAL_SECONDS into scheduler
+
+### Phase 8: Phase 02 Retroverification
+**Goal**: Produce `02-VERIFICATION.md` by running the verifier against Phase 02 scope — DARM-01..10, ARM-01..07, ISAPI-01..05 all formally verified with implementation evidence
+**Depends on**: Phase 7
+**Requirements**: ISAPI-01, ISAPI-02, ISAPI-03, ISAPI-04, ISAPI-05, DARM-01, DARM-02, DARM-03, DARM-04, DARM-05, DARM-06, DARM-07, DARM-08, DARM-09, DARM-10, ARM-01, ARM-02, ARM-03, ARM-04, ARM-05, ARM-06, ARM-07
+**Gap Closure**: Closes verification gap from v1.0 audit — Phase 02 was fully implemented and tested but never had verify-work run
+**Success Criteria** (what must be TRUE):
+  1. `.planning/phases/02-isapi-core-operations/02-VERIFICATION.md` exists with `status: passed`
+  2. All 22 requirements (ISAPI-01..05, DARM-01..10, ARM-01..07) have `SATISFIED` status with implementation evidence in the verification report
+
+Plans:
+- [ ] 08-01-PLAN.md — Run gsd-verifier against Phase 02 scope to produce 02-VERIFICATION.md
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -130,3 +157,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 4. Automation & Alerts | 2/2 | Complete   | 2026-03-11 |
 | 5. Admin UI | 2/2 | Complete   | 2026-03-11 |
 | 6. Infrastructure | 2/2 | Complete    | 2026-03-11 |
+| 7. ISAPI Retry Fix & Deployment Hardening | 0/1 | Pending | — |
+| 8. Phase 02 Retroverification | 0/1 | Pending | — |
