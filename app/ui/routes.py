@@ -19,26 +19,32 @@ Provides:
   GET /ui/nvrs/{id}/detail                 — Expandable camera list partial
   GET /ui/nvrs/{id}/test                   — Inline connectivity test result
   POST /ui/nvrs/create                     — Add NVR form submission
+  GET /locations                           — Location management page
+  POST /ui/locations/create                — Add location form submission
+  POST /ui/locations/{id}/delete           — Delete location
 """
 import uuid
 from datetime import datetime, timezone
 from typing import List
+from zoneinfo import ZoneInfo
 
 import httpx
 from fastapi import APIRouter, Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import delete as sql_delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.cameras.models import Camera
 from app.core.database import get_db
 from app.locations.models import Location
 from app.nvrs.models import NVRDevice
+from app.partitions.models import CameraDetectionSnapshot, CameraDisarmRefcount, PartitionCamera
 from app.partitions.schemas import PartitionCreate, PartitionUpdate
 from app.partitions.service import (
     arm_partition,
     create_partition,
+    delete_partition,
     disarm_partition,
     get_dashboard,
     get_partition_audit_log,
@@ -49,6 +55,18 @@ from app.partitions.service import (
 )
 
 templates = Jinja2Templates(directory="app/templates")
+
+_TZ = ZoneInfo("Europe/Bucharest")
+
+
+def _localdt(dt: datetime | None, fmt: str = "%Y-%m-%d %H:%M:%S") -> str:
+    """Convert a UTC-aware datetime to Europe/Bucharest and format it."""
+    if dt is None:
+        return "—"
+    return dt.astimezone(_TZ).strftime(fmt)
+
+
+templates.env.filters["localdt"] = _localdt
 
 ui_router = APIRouter(tags=["ui"])
 
@@ -410,6 +428,29 @@ async def partition_update_submit(
         )
 
 
+@ui_router.post("/ui/partitions/{partition_id}/delete", response_class=HTMLResponse)
+async def partition_delete(
+    partition_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    from fastapi import HTTPException
+    try:
+        await delete_partition(partition_id, db)
+    except HTTPException as exc:
+        # Blocked deletion (disarmed/partial state) — show error on detail page
+        partition = await get_partition_detail(partition_id, db)
+        state = await get_partition_state(partition_id, db)
+        audit = await get_partition_audit_log(partition_id, 20, 0, db)
+        return templates.TemplateResponse(
+            "partition_detail.html",
+            {"request": request, "partition": partition, "state": state, "audit": audit,
+             "rearm_in_minutes": None, "error": exc.detail},
+            status_code=400,
+        )
+    return RedirectResponse("/", status_code=303)
+
+
 # ---------------------------------------------------------------------------
 # Camera section partials (used by partition_form.html Sync button)
 # ---------------------------------------------------------------------------
@@ -466,11 +507,12 @@ async def nvrs_page(
 ):
     nvr_result = await db.execute(select(NVRDevice))
     nvrs = nvr_result.scalars().all()
-    loc_result = await db.execute(select(Location))
+    loc_result = await db.execute(select(Location).order_by(Location.name))
     locations = loc_result.scalars().all()
+    locations_by_id = {loc.id: loc for loc in locations}
     return templates.TemplateResponse(
         "nvrs.html",
-        {"request": request, "nvrs": nvrs, "locations": locations, "error": None},
+        {"request": request, "nvrs": nvrs, "locations": locations, "locations_by_id": locations_by_id, "error": None},
     )
 
 
@@ -504,6 +546,109 @@ async def nvr_test_connectivity(
     else:
         error_msg = data.get("error", "unknown")
         return HTMLResponse(f'<span style="color:red">Offline — {error_msg}</span>')
+
+
+@ui_router.get("/locations", response_class=HTMLResponse)
+async def locations_page(request: Request, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Location).order_by(Location.name))
+    locations = result.scalars().all()
+    return templates.TemplateResponse(
+        "locations.html",
+        {"request": request, "locations": locations, "error": None},
+    )
+
+
+@ui_router.post("/ui/locations/create", response_class=HTMLResponse)
+async def locations_create(
+    request: Request,
+    name: str = Form(...),
+    timezone: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                "http://localhost:8000/api/locations",
+                json={"name": name, "timezone": timezone},
+            )
+        data = resp.json()
+        if not data.get("success"):
+            result = await db.execute(select(Location).order_by(Location.name))
+            locations = result.scalars().all()
+            return templates.TemplateResponse(
+                "locations.html",
+                {"request": request, "locations": locations, "error": data.get("error", "Failed to create location")},
+            )
+    except Exception as exc:
+        result = await db.execute(select(Location).order_by(Location.name))
+        locations = result.scalars().all()
+        return templates.TemplateResponse(
+            "locations.html",
+            {"request": request, "locations": locations, "error": str(exc)},
+        )
+    return RedirectResponse("/locations", status_code=303)
+
+
+@ui_router.post("/ui/locations/{location_id}/delete", response_class=HTMLResponse)
+async def locations_delete(
+    location_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        # Get NVRs in this location
+        nvr_result = await db.execute(select(NVRDevice).where(NVRDevice.location_id == location_id))
+        nvrs = nvr_result.scalars().all()
+        for nvr in nvrs:
+            # Delete cameras and their related records
+            cam_result = await db.execute(select(Camera).where(Camera.nvr_id == nvr.id))
+            cameras = cam_result.scalars().all()
+            for cam in cameras:
+                await db.execute(sql_delete(CameraDetectionSnapshot).where(CameraDetectionSnapshot.camera_id == cam.id))
+                await db.execute(sql_delete(CameraDisarmRefcount).where(CameraDisarmRefcount.camera_id == cam.id))
+                await db.execute(sql_delete(PartitionCamera).where(PartitionCamera.camera_id == cam.id))
+            await db.execute(sql_delete(Camera).where(Camera.nvr_id == nvr.id))
+        await db.execute(sql_delete(NVRDevice).where(NVRDevice.location_id == location_id))
+        await db.execute(sql_delete(Location).where(Location.id == location_id))
+        await db.commit()
+    except Exception as exc:
+        await db.rollback()
+        result = await db.execute(select(Location).order_by(Location.name))
+        locations = result.scalars().all()
+        return templates.TemplateResponse(
+            "locations.html",
+            {"request": request, "locations": locations, "error": str(exc)},
+        )
+    return RedirectResponse("/locations", status_code=303)
+
+
+@ui_router.post("/ui/nvrs/{nvr_id}/delete", response_class=HTMLResponse)
+async def nvr_delete(
+    nvr_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        cam_result = await db.execute(select(Camera).where(Camera.nvr_id == nvr_id))
+        cameras = cam_result.scalars().all()
+        for cam in cameras:
+            await db.execute(sql_delete(CameraDetectionSnapshot).where(CameraDetectionSnapshot.camera_id == cam.id))
+            await db.execute(sql_delete(CameraDisarmRefcount).where(CameraDisarmRefcount.camera_id == cam.id))
+            await db.execute(sql_delete(PartitionCamera).where(PartitionCamera.camera_id == cam.id))
+        await db.execute(sql_delete(Camera).where(Camera.nvr_id == nvr_id))
+        await db.execute(sql_delete(NVRDevice).where(NVRDevice.id == nvr_id))
+        await db.commit()
+    except Exception as exc:
+        await db.rollback()
+        result = await db.execute(select(NVRDevice))
+        nvrs = result.scalars().all()
+        loc_result = await db.execute(select(Location).order_by(Location.name))
+        locations = loc_result.scalars().all()
+        return templates.TemplateResponse(
+            "nvrs.html",
+            {"request": request, "nvrs": nvrs, "locations": locations, "error": str(exc)},
+        )
+    return RedirectResponse("/nvrs", status_code=303)
 
 
 @ui_router.post("/ui/nvrs/create", response_class=HTMLResponse)

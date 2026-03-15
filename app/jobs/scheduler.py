@@ -1,8 +1,12 @@
-"""Shared AsyncScheduler instance and lifespan helpers.
+"""Shared AsyncScheduler instance.
 
 Uses SQLAlchemyDataStore backed by the existing app engine so jobs survive
 process restarts. The module-level `scheduler` instance is imported by other
 job modules to schedule/cancel jobs.
+
+Lifecycle: use `async with scheduler:` in the FastAPI lifespan, then call
+`await scheduler.start_in_background()` inside that block. APScheduler 4.x
+requires the async context manager to be active for the full lifespan.
 """
 import logging
 
@@ -14,20 +18,6 @@ from app.core.database import engine
 logger = logging.getLogger(__name__)
 
 # Module-level scheduler instance backed by the existing PostgreSQL engine.
-# Start/stop is managed via lifespan helpers called from app/main.py.
+# The lifespan in app/main.py owns the `async with scheduler:` context.
 data_store = SQLAlchemyDataStore(engine)
 scheduler = AsyncScheduler(data_store=data_store)
-
-
-async def start_scheduler() -> None:
-    """Start the APScheduler AsyncScheduler in the background."""
-    logger.info("Starting APScheduler...")
-    await scheduler.start_in_background()
-    logger.info("APScheduler started.")
-
-
-async def shutdown_scheduler() -> None:
-    """Gracefully stop the APScheduler."""
-    logger.info("Shutting down APScheduler...")
-    await scheduler.stop()
-    logger.info("APScheduler stopped.")

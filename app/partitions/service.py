@@ -110,10 +110,24 @@ async def disarm_partition(
         state.state = "disarmed"
         state.last_changed_at = datetime.now(timezone.utc)
         state.last_changed_by = disarmed_by
+        if partition.auto_rearm_minutes:
+            state.scheduled_rearm_at = state.last_changed_at + timedelta(minutes=partition.auto_rearm_minutes)
+        else:
+            state.scheduled_rearm_at = None
+        audit = PartitionAuditLog(
+            partition_id=partition_id,
+            action="disarm",
+            performed_by=disarmed_by,
+            audit_metadata={"reason": reason, "cameras_disarmed": 0, "cameras_kept_disarmed_by_other_partition": 0, "errors_count": 0},
+        )
+        db.add(audit)
         await db.commit()
+        if state.scheduled_rearm_at is not None:
+            await schedule_rearm(partition_id, state.scheduled_rearm_at)
         return DisarmResponse(
             cameras_disarmed=0,
             cameras_kept_disarmed_by_other_partition=0,
+            scheduled_rearm_at=state.scheduled_rearm_at,
         )
 
     # 5. Load all NVRs for those cameras
@@ -329,6 +343,13 @@ async def arm_partition(
         state.last_changed_at = datetime.now(timezone.utc)
         state.last_changed_by = armed_by
         state.scheduled_rearm_at = None
+        audit = PartitionAuditLog(
+            partition_id=partition_id,
+            action="arm",
+            performed_by=armed_by,
+            audit_metadata={"cameras_restored": 0, "cameras_kept_disarmed": 0, "errors_count": 0},
+        )
+        db.add(audit)
         await db.commit()
         return ArmResponse(cameras_restored=0, cameras_kept_disarmed=0)
 

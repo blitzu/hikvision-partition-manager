@@ -7,7 +7,7 @@
   </p>
   {% if state.last_changed_at %}
   <p>Last changed:
-    {{ state.last_changed_at.strftime('%Y-%m-%d %H:%M') }}
+    {{ state.last_changed_at|localdt }}
     {% if state.last_changed_by %}by {{ state.last_changed_by }}{% endif %}
   </p>
   {% endif %}
@@ -65,14 +65,16 @@
         <th>Time</th>
         <th>Action</th>
         <th>Performed By</th>
+        <th>Reason</th>
       </tr>
     </thead>
     <tbody>
       {% for entry in audit.items %}
       <tr>
-        <td>{{ entry.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td>{{ entry.created_at|localdt }}</td>
         <td>{{ entry.action }}</td>
         <td>{{ entry.performed_by }}</td>
+        <td>{{ entry.audit_metadata.reason if entry.audit_metadata and entry.audit_metadata.reason else '—' }}</td>
       </tr>
       {% endfor %}
     </tbody>

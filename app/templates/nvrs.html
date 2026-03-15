@@ -36,17 +36,20 @@
   <thead>
     <tr>
       <th>Name</th>
+      <th>Location</th>
       <th>IP Address</th>
       <th>Status</th>
       <th>Last Seen</th>
       <th>Connectivity</th>
       <th>Cameras</th>
+      <th>Actions</th>
     </tr>
   </thead>
   <tbody>
     {% for nvr in nvrs %}
     <tr>
       <td>{{ nvr.name }}</td>
+      <td>{{ locations_by_id[nvr.location_id].name if nvr.location_id and nvr.location_id in locations_by_id else '—' }}</td>
       <td>{{ nvr.ip_address }}:{{ nvr.port }}</td>
       <td>
         <span class="state-dot state-{{ 'armed' if nvr.status == 'online' else 'error' }}"></span>
@@ -54,7 +57,7 @@
       </td>
       <td>
         {% if nvr.last_seen_at %}
-          {{ nvr.last_seen_at.strftime('%Y-%m-%d %H:%M') }}
+          {{ nvr.last_seen_at|localdt }}
         {% else %}
           Never
         {% endif %}
@@ -70,9 +73,16 @@
                 hx-target="#nvr-cameras-{{ nvr.id }}"
                 hx-swap="innerHTML">Show Cameras</button>
       </td>
+      <td>
+        <form method="post" action="/ui/nvrs/{{ nvr.id }}/delete"
+              onsubmit="return confirm('Stergi NVR-ul {{ nvr.name }}?')"
+              style="display:inline">
+          <button type="submit" class="outline">Delete</button>
+        </form>
+      </td>
     </tr>
     <tr>
-      <td colspan="6" id="nvr-cameras-{{ nvr.id }}"></td>
+      <td colspan="8" id="nvr-cameras-{{ nvr.id }}"></td>
     </tr>
     {% endfor %}
   </tbody>

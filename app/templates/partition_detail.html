@@ -5,8 +5,21 @@
 {% block content %}
 <h2>
   {{ partition.name }}
-  <a href="/partitions/{{ partition.id }}/edit" role="button" class="outline" style="float:right">Edit</a>
+  <span style="float:right">
+    <a href="/partitions/{{ partition.id }}/edit" role="button" class="outline" style="margin-right:6px">Edit</a>
+    <form method="post" action="/ui/partitions/{{ partition.id }}/delete"
+          onsubmit="return confirm('Stergi partitia {{ partition.name }}? Aceasta actiune este ireversibila.')"
+          style="display:inline">
+      <button type="submit" class="outline secondary">Delete</button>
+    </form>
+  </span>
 </h2>
+
+{% if error is defined and error %}
+<article style="background: var(--pico-del-color, #f8d7da); padding: 1rem; margin-bottom: 1rem;">
+  <strong>Error:</strong> {{ error }}
+</article>
+{% endif %}
 
 <!-- Static partition metadata — loaded once, not polled -->
 <section>

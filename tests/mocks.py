@@ -4,6 +4,10 @@
 class MockISAPIClient:
     """Drop-in replacement for ISAPIClient during unit tests."""
 
+    def __init__(self, *args, **kwargs) -> None:
+        """Accepts (host, port, username, password) to match real ISAPIClient."""
+        pass
+
     async def get_device_info(self) -> dict:
         return {
             "deviceName": "Test-NVR",

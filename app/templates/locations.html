@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Locations — Partition Manager{% endblock %}
+
+{% block content %}
+<h2>Locations</h2>
+
+{% if error %}
+<article style="background: var(--pico-del-color, #f8d7da); padding: 1rem; margin-bottom: 1rem;">
+  <strong>Error:</strong> {{ error }}
+</article>
+{% endif %}
+
+<details>
+  <summary>Add Location</summary>
+  <form method="post" action="/ui/locations/create" style="margin-top: 1rem;">
+    <label>Name <input type="text" name="name" required placeholder="ex: Sediu Central"></label>
+    <label>Timezone
+      <input type="text" name="timezone" required placeholder="ex: Europe/Bucharest" value="Europe/Bucharest">
+    </label>
+    <button type="submit">Add Location</button>
+  </form>
+</details>
+
+{% if locations %}
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Timezone</th>
+      <th>Created</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for loc in locations %}
+    <tr>
+      <td>{{ loc.name }}</td>
+      <td>{{ loc.timezone }}</td>
+      <td>{{ loc.created_at|localdt('%Y-%m-%d') }}</td>
+      <td>
+        <form method="post" action="/ui/locations/{{ loc.id }}/delete"
+              onsubmit="return confirm('Delete location {{ loc.name }}?')"
+              style="display:inline">
+          <button type="submit" class="outline" style="font-size:0.8em">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p><em>No locations yet. Use the form above to add one.</em></p>
+{% endif %}
+
+{% endblock %}
