@@ -500,8 +500,8 @@ async def test_nvr_health_check_commits_after_all_nvrs_processed():
 
 
 @pytest.mark.asyncio
-async def test_lifespan_registers_stuck_disarmed_monitor_with_5_minute_interval():
-    """JOB-02: The stuck-disarmed monitor must be registered with IntervalTrigger(minutes=5)."""
+async def test_lifespan_registers_stuck_disarmed_monitor_with_poll_interval_seconds():
+    """JOB-02: The stuck-disarmed monitor must be registered with IntervalTrigger(seconds=POLL_INTERVAL_SECONDS)."""
     from apscheduler import ConflictPolicy
     from apscheduler.triggers.interval import IntervalTrigger
     from app.jobs.monitors import stuck_disarmed_monitor
@@ -553,8 +553,11 @@ async def test_lifespan_registers_stuck_disarmed_monitor_with_5_minute_interval(
 
     trigger = stuck_call["trigger"]
     assert isinstance(trigger, IntervalTrigger), f"Expected IntervalTrigger, got {type(trigger)}"
-    # IntervalTrigger exposes interval components as direct attributes
-    assert trigger.minutes == 5, f"Expected minutes=5, got {trigger.minutes}"
+    # IntervalTrigger uses seconds=settings.POLL_INTERVAL_SECONDS (default 300 = 5 minutes)
+    from app.core.config import settings
+    assert trigger.seconds == settings.POLL_INTERVAL_SECONDS, (
+        f"Expected seconds={settings.POLL_INTERVAL_SECONDS}, got {trigger.seconds}"
+    )
 
 
 @pytest.mark.asyncio

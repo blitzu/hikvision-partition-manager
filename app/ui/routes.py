@@ -36,6 +36,7 @@ from sqlalchemy import delete as sql_delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.cameras.models import Camera
+from app.core.config import settings
 from app.core.database import get_db
 from app.locations.models import Location
 from app.nvrs.models import NVRDevice
@@ -482,7 +483,7 @@ async def nvr_cameras_sync_partial(
 ):
     async with httpx.AsyncClient() as client:
         try:
-            await client.get(f"http://localhost:8000/api/nvrs/{nvr_id}/cameras/sync", timeout=15.0)
+            await client.get(f"{settings.BASE_URL}/api/nvrs/{nvr_id}/cameras/sync", timeout=15.0)
         except Exception:
             pass  # Best-effort sync; fall through to DB query
     nvr = await db.get(NVRDevice, nvr_id)
@@ -537,7 +538,7 @@ async def nvr_test_connectivity(
 ):
     async with httpx.AsyncClient() as client:
         try:
-            resp = await client.get(f"http://localhost:8000/api/nvrs/{nvr_id}/test", timeout=15.0)
+            resp = await client.get(f"{settings.BASE_URL}/api/nvrs/{nvr_id}/test", timeout=15.0)
             data = resp.json()
         except Exception as exc:
             return HTMLResponse(f'<span style="color:red">Error — {exc}</span>')
@@ -568,7 +569,7 @@ async def locations_create(
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.post(
-                "http://localhost:8000/api/locations",
+                f"{settings.BASE_URL}/api/locations",
                 json={"name": name, "timezone": timezone},
             )
         data = resp.json()
@@ -665,7 +666,7 @@ async def nvr_create_submit(
     async with httpx.AsyncClient() as client:
         try:
             resp = await client.post(
-                f"http://localhost:8000/api/locations/{location_id}/nvrs",
+                f"{settings.BASE_URL}/api/locations/{location_id}/nvrs",
                 json={
                     "name": name,
                     "ip_address": ip_address,

@@ -86,10 +86,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     async with scheduler:
         await scheduler.start_in_background()
         await _reconcile_missed_rearm_jobs()
-        # Register stuck-disarmed monitor: every 5 minutes
+        # Register stuck-disarmed monitor: interval driven by POLL_INTERVAL_SECONDS config
         await scheduler.add_schedule(
             stuck_disarmed_monitor,
-            IntervalTrigger(minutes=5),
+            IntervalTrigger(seconds=settings.POLL_INTERVAL_SECONDS),
             id="stuck_disarmed_monitor",
             conflict_policy=ConflictPolicy.replace,
         )
