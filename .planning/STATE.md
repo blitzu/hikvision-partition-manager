@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Phase 7 context gathered
-last_updated: "2026-03-15T17:58:53.938Z"
+stopped_at: Completed 07-isapi-retry-fix-01-PLAN.md
+last_updated: "2026-03-16T08:37:17.380Z"
 last_activity: 2026-03-11 — stuck-disarmed monitor + NVR health check APScheduler jobs (108 tests)
 progress:
   total_phases: 8
-  completed_phases: 6
-  total_plans: 15
-  completed_plans: 15
+  completed_phases: 7
+  total_plans: 16
+  completed_plans: 16
   percent: 100
 ---
 
@@ -70,6 +70,7 @@ Progress: [██████████] 100%
 | Phase 05-admin-ui P02 | 8 min | 2 tasks | 5 files |
 | Phase 06-infrastructure P01 | 1 | 2 tasks | 3 files |
 | Phase 06-infrastructure P02 | 8 | 2 tasks | 9 files |
+| Phase 07-isapi-retry-fix P01 | 3 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -123,6 +124,9 @@ Recent decisions affecting current work:
 - [Phase 06-infrastructure]: Lazy import of request_id_var inside JsonFormatter.format() avoids circular import between app.core.logging and app.middleware.logging
 - [Phase 06-infrastructure]: asyncio.Event() created lazily in inflight module — Python 3.10+ DeprecationWarning when Event created outside running loop
 - [Phase 06-infrastructure]: Manual logging.Handler in test_access_log_middleware — TestClient anyio portal thread runs outside caplog propagation chain
+- [Phase 07-isapi-retry-fix]: Inline try/except retry applied to get_device_info and get_camera_channels — matches existing codebase pattern, no new abstractions
+- [Phase 07-isapi-retry-fix]: All UI self-calls use settings.BASE_URL — no hardcoded host:port strings allowed in ui/routes.py
+- [Phase 07-isapi-retry-fix]: IntervalTrigger(seconds=settings.POLL_INTERVAL_SECONDS) for stuck_disarmed_monitor — POLL_INTERVAL_SECONDS now actively wired (was inert)
 
 ### Pending Todos
 
@@ -134,6 +138,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T17:58:53.936Z
-Stopped at: Phase 7 context gathered
-Resume file: .planning/phases/07-isapi-retry-fix/07-CONTEXT.md
+Last session: 2026-03-16T08:37:17.377Z
+Stopped at: Completed 07-isapi-retry-fix-01-PLAN.md
+Resume file: None

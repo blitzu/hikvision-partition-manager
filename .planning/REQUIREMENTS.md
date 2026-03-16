@@ -148,7 +148,7 @@
 | NVR-06 | Phase 1 | Complete |
 | ISAPI-01 | Phase 8 (gap) | Pending |
 | ISAPI-02 | Phase 8 (gap) | Pending |
-| ISAPI-03 | Phase 7 (gap) | Pending |
+| ISAPI-03 | Phase 7 (gap) | Complete |
 | ISAPI-04 | Phase 8 (gap) | Pending |
 | ISAPI-05 | Phase 8 (gap) | Pending |
 | DARM-01 | Phase 8 (gap) | Pending |

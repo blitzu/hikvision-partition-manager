@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Automation & Alerts** - Background jobs (auto-rearm, stuck monitor, NVR health) and webhook delivery (completed 2026-03-11)
 - [x] **Phase 5: Admin UI** - HTMX + Jinja2 dashboard, partition detail, editor, and NVR management pages (completed 2026-03-11)
 - [x] **Phase 6: Infrastructure** - Docker Compose deployment, structured logging, graceful shutdown, README (completed 2026-03-11)
-- [ ] **Phase 7: ISAPI Retry Fix & Deployment Hardening** - Add retry-on-timeout to all ISAPI client methods; fix hardcoded BASE_URL in UI self-calls; wire POLL_INTERVAL_SECONDS config to scheduler
+- [x] **Phase 7: ISAPI Retry Fix & Deployment Hardening** - Add retry-on-timeout to all ISAPI client methods; fix hardcoded BASE_URL in UI self-calls; wire POLL_INTERVAL_SECONDS config to scheduler (completed 2026-03-16)
 - [ ] **Phase 8: Phase 02 Retroverification** - Run verifier against Phase 02 scope to produce 02-VERIFICATION.md, formally closing DARM-01..10, ARM-01..07, ISAPI-01..05
 
 ## Phase Details
@@ -157,5 +157,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 4. Automation & Alerts | 2/2 | Complete   | 2026-03-11 |
 | 5. Admin UI | 2/2 | Complete   | 2026-03-11 |
 | 6. Infrastructure | 2/2 | Complete    | 2026-03-11 |
-| 7. ISAPI Retry Fix & Deployment Hardening | 0/1 | Pending | — |
+| 7. ISAPI Retry Fix & Deployment Hardening | 1/1 | Complete   | 2026-03-16 |
 | 8. Phase 02 Retroverification | 0/1 | Pending | — |
