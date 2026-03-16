@@ -253,3 +253,98 @@ async def test_detection_url_pattern(
         await client.get_detection_config(3, detection_type)
 
     mock_http_client.get.assert_called_once_with(expected_url)
+
+
+# ---------------------------------------------------------------------------
+# get_device_info — retry logic (ISAPI-03)
+# ---------------------------------------------------------------------------
+
+
+async def test_get_device_info_timeout_retries_once_then_raises(
+    client: ISAPIClient,
+) -> None:
+    """get_device_info: first TimeoutException triggers one retry; second raises."""
+    mock_http_client = AsyncMock()
+    mock_http_client.get = AsyncMock(side_effect=httpx.TimeoutException("timeout"))
+    mock_http_client.__aenter__ = AsyncMock(return_value=mock_http_client)
+    mock_http_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("httpx.AsyncClient", return_value=mock_http_client):
+        with pytest.raises(httpx.TimeoutException):
+            await client.get_device_info()
+
+    assert mock_http_client.get.call_count == 2
+
+
+async def test_get_device_info_first_timeout_second_success(
+    client: ISAPIClient,
+) -> None:
+    """get_device_info: first TimeoutException triggers retry; second call succeeds."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.text = "<DeviceInfo><model>DS-7608NI</model></DeviceInfo>"
+    mock_response.raise_for_status = MagicMock()
+
+    mock_http_client = AsyncMock()
+    mock_http_client.get = AsyncMock(
+        side_effect=[httpx.TimeoutException("timeout"), mock_response]
+    )
+    mock_http_client.__aenter__ = AsyncMock(return_value=mock_http_client)
+    mock_http_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("httpx.AsyncClient", return_value=mock_http_client):
+        result = await client.get_device_info()
+
+    assert isinstance(result, dict)
+    assert result.get("model") == "DS-7608NI"
+    assert mock_http_client.get.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# get_camera_channels — retry logic (ISAPI-03)
+# ---------------------------------------------------------------------------
+
+
+async def test_get_camera_channels_timeout_retries_once_then_raises(
+    client: ISAPIClient,
+) -> None:
+    """get_camera_channels: first TimeoutException triggers one retry; second raises."""
+    mock_http_client = AsyncMock()
+    mock_http_client.get = AsyncMock(side_effect=httpx.TimeoutException("timeout"))
+    mock_http_client.__aenter__ = AsyncMock(return_value=mock_http_client)
+    mock_http_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("httpx.AsyncClient", return_value=mock_http_client):
+        with pytest.raises(httpx.TimeoutException):
+            await client.get_camera_channels()
+
+    assert mock_http_client.get.call_count == 2
+
+
+async def test_get_camera_channels_first_timeout_second_success(
+    client: ISAPIClient,
+) -> None:
+    """get_camera_channels: first TimeoutException triggers retry; second call succeeds."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.text = (
+        "<VideoInputChannelList>"
+        "<VideoInputChannel><id>1</id><name>Camera 1</name></VideoInputChannel>"
+        "</VideoInputChannelList>"
+    )
+    mock_response.raise_for_status = MagicMock()
+
+    mock_http_client = AsyncMock()
+    mock_http_client.get = AsyncMock(
+        side_effect=[httpx.TimeoutException("timeout"), mock_response]
+    )
+    mock_http_client.__aenter__ = AsyncMock(return_value=mock_http_client)
+    mock_http_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("httpx.AsyncClient", return_value=mock_http_client):
+        result = await client.get_camera_channels()
+
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert result[0]["channel_no"] == 1
+    assert mock_http_client.get.call_count == 2

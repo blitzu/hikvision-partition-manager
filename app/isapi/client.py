@@ -38,20 +38,34 @@ class ISAPIClient:
         }
 
     async def get_device_info(self) -> dict:
-        """GET /ISAPI/System/deviceInfo — returns parsed device info dict."""
+        """GET /ISAPI/System/deviceInfo — returns parsed device info dict.
+
+        Retries once on timeout. Second timeout re-raises TimeoutException.
+        """
         async with _track_inflight():
             async with httpx.AsyncClient(**self._client_kwargs) as client:
-                resp = await client.get(f"{self.base_url}/ISAPI/System/deviceInfo")
+                try:
+                    resp = await client.get(f"{self.base_url}/ISAPI/System/deviceInfo")
+                except httpx.TimeoutException:
+                    resp = await client.get(f"{self.base_url}/ISAPI/System/deviceInfo")
                 resp.raise_for_status()
                 return self._parse_xml(resp.text)
 
     async def get_camera_channels(self) -> list[dict]:
-        """GET /ISAPI/System/Video/inputs/channels — returns list of channel dicts."""
+        """GET /ISAPI/System/Video/inputs/channels — returns list of channel dicts.
+
+        Retries once on timeout. Second timeout re-raises TimeoutException.
+        """
         async with _track_inflight():
             async with httpx.AsyncClient(**self._client_kwargs) as client:
-                resp = await client.get(
-                    f"{self.base_url}/ISAPI/System/Video/inputs/channels"
-                )
+                try:
+                    resp = await client.get(
+                        f"{self.base_url}/ISAPI/System/Video/inputs/channels"
+                    )
+                except httpx.TimeoutException:
+                    resp = await client.get(
+                        f"{self.base_url}/ISAPI/System/Video/inputs/channels"
+                    )
                 resp.raise_for_status()
                 return self._parse_channel_list(resp.text)
 
