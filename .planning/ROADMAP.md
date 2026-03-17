@@ -140,9 +140,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. `.planning/phases/02-isapi-core-operations/02-VERIFICATION.md` exists with `status: passed`
   2. All 22 requirements (ISAPI-01..05, DARM-01..10, ARM-01..07) have `SATISFIED` status with implementation evidence in the verification report
+**Plans**: 1 plan
 
 Plans:
-- [ ] 08-01-PLAN.md — Run gsd-verifier against Phase 02 scope to produce 02-VERIFICATION.md
+- [ ] 08-01-PLAN.md — Pre-flight test run, write 02-VERIFICATION.md with full narrative evidence, update REQUIREMENTS.md traceability to Complete
 
 ## Progress
 
