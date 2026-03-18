@@ -7,30 +7,18 @@ setup_logging: configures the root logger with JsonFormatter on StreamHandler.
 NVR-06 security: password fields are scrubbed from all log output.
 """
 import collections
+import datetime
 import json
 import logging
 
+# Standard LogRecord attributes — excluded from the "extra" fields display
+_SKIP_ATTRS: frozenset = frozenset(logging.LogRecord.__dict__) | {
+    "message", "asctime", "args", "msg", "taskName",
+}
+
 
 class JsonFormatter(logging.Formatter):
-    """Log formatter that produces single-line JSON output.
-
-    Required fields in every record:
-      timestamp, level, logger, message, request_id
-
-    Extra fields passed via extra={} are included unless they are internal
-    LogRecord attributes. The 'password' key is always scrubbed (NVR-06).
-    """
-
-    # Attributes present on every LogRecord — omit from JSON output to
-    # avoid noise. We combine the default __dict__ keys with a small set
-    # of post-format keys that are added by the Formatter base class.
-    SKIP_ATTRS: frozenset = frozenset(logging.LogRecord.__dict__) | {
-        "message",
-        "asctime",
-        "args",
-        "msg",
-        "taskName",
-    }
+    """Log formatter that produces single-line JSON output."""
 
     def format(self, record: logging.LogRecord) -> str:
         from app.middleware.logging import request_id_var  # lazy to avoid circular import
@@ -43,12 +31,10 @@ class JsonFormatter(logging.Formatter):
             "request_id": request_id_var.get(""),
         }
 
-        # Include any extra fields added by the caller
         for key, val in record.__dict__.items():
-            if key not in self.SKIP_ATTRS:
+            if key not in _SKIP_ATTRS:
                 log_obj[key] = val
 
-        # NVR-06: scrub password field from all log output
         log_obj.pop("password", None)
 
         if record.exc_info:
@@ -58,9 +44,10 @@ class JsonFormatter(logging.Formatter):
 
 
 class MemoryLogHandler(logging.Handler):
-    """Keeps the last `maxlen` formatted log records in memory.
+    """Keeps the last `maxlen` log records in memory for /admin/logs.
 
-    Accessible via `memory_handler.records` — a deque of dicts.
+    Builds the entry dict directly from the LogRecord so it never
+    depends on a formatter being set — avoids silent emit failures.
     """
 
     def __init__(self, maxlen: int = 500) -> None:
@@ -69,7 +56,20 @@ class MemoryLogHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:
         try:
-            self.records.appendleft(json.loads(self.format(record)))
+            ts = datetime.datetime.fromtimestamp(record.created).strftime("%Y-%m-%dT%H:%M:%S")
+            entry: dict = {
+                "timestamp": ts,
+                "level": record.levelname,
+                "logger": record.name,
+                "message": record.getMessage(),
+            }
+            for key, val in record.__dict__.items():
+                if key not in _SKIP_ATTRS:
+                    entry[key] = str(val)
+            entry.pop("password", None)
+            if record.exc_info:
+                entry["exception"] = self.formatException(record.exc_info)
+            self.records.appendleft(entry)
         except Exception:
             pass
 
@@ -78,13 +78,8 @@ memory_handler = MemoryLogHandler(maxlen=500)
 
 
 def setup_logging(log_level: str = "INFO") -> None:
-    """Configure root logger to emit structured JSON to stderr.
-
-    Should be called once at application startup, before FastAPI instantiation.
-    Uses force=True to replace any existing handlers.
-    """
+    """Configure root logger to emit structured JSON to stderr + memory."""
     formatter = JsonFormatter()
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter)
-    memory_handler.setFormatter(formatter)
     logging.basicConfig(level=log_level.upper(), handlers=[stream_handler, memory_handler], force=True)

@@ -83,6 +83,7 @@ async def _reconcile_missed_rearm_jobs() -> None:
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan: run migrations on startup, dispose engine on shutdown."""
     await asyncio.to_thread(_run_migrations)
+    logger.info("Application started — log viewer available at /admin/logs")
     async with scheduler:
         await scheduler.start_in_background()
         await _reconcile_missed_rearm_jobs()
