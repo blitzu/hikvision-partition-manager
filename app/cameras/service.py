@@ -6,6 +6,8 @@ from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import httpx
+
 from app.cameras.models import Camera
 from app.core.crypto import decrypt_password
 from app.isapi.client import ISAPIClient
@@ -29,6 +31,10 @@ async def sync_cameras_from_nvr(
 
     try:
         channels = await isapi_client.get_camera_channels()
+    except httpx.HTTPStatusError as exc:
+        nvr.status = "offline"
+        await db.commit()
+        return {"success": False, "count": 0, "error": f"HTTP {exc.response.status_code} from NVR"}
     except Exception as exc:
         nvr.status = "offline"
         await db.commit()
