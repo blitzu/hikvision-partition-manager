@@ -614,10 +614,9 @@ async def admin_logs(level: str = Query(default=""), logger: str = Query(default
     table = "\n".join(rows) if rows else "<tr><td colspan='5'><em>No records.</em></td></tr>"
     debug_info = (
         f"<pre style='background:#f4f4f4;padding:0.5rem;font-size:0.8em'>"
-        f"memory_handler in root.handlers: {memory_in_root}\n"
+        f"file_handler in root.handlers: {memory_in_root}\n"
         f"root logger level: {root_level}\n"
-        f"root handlers: {handler_names}\n"
-        f"memory_handler.records deque size: {len(memory_handler.records)}"
+        f"root handlers: {handler_names}"
         f"</pre>"
     )
     html = f"""<!DOCTYPE html>
