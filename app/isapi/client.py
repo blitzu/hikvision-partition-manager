@@ -78,8 +78,19 @@ class ISAPIClient:
                 resp.raise_for_status()
                 return self._parse_channel_list(resp.text)
 
+    # Special detection_type value for basic (non-Smart) motion detection.
+    # Maps to /ISAPI/System/Video/inputs/channels/{id}/motionDetection
+    BASIC_MOTION = "basicMotionDetection"
+
     def _detection_url(self, channel_no: int, detection_type: str) -> str:
-        """Return the ISAPI Smart detection URL for the given channel and type."""
+        """Return the ISAPI detection URL for the given channel and type.
+
+        Most types map to /ISAPI/Smart/{type}/channels/{id}.
+        BASIC_MOTION maps to /ISAPI/System/Video/inputs/channels/{id}/motionDetection
+        (used as fallback when Smart endpoints are not supported).
+        """
+        if detection_type == self.BASIC_MOTION:
+            return f"{self.base_url}/ISAPI/System/Video/inputs/channels/{channel_no}/motionDetection"
         return f"{self.base_url}/ISAPI/Smart/{detection_type}/channels/{channel_no}"
 
     async def get_detection_config(self, channel_no: int, detection_type: str) -> str:

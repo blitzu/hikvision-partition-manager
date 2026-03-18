@@ -186,7 +186,7 @@ async def disarm_partition(
                 snapshot = res.scalar_one_or_none()
             
             if not snapshot:
-                # b. GET all 4 detection types
+                # b. GET all supported detection types
                 snapshot_data = {}
                 found_any = False
                 for d_type in DETECTION_TYPES:
@@ -195,9 +195,17 @@ async def disarm_partition(
                         snapshot_data[d_type] = xml
                         found_any = True
                     except Exception:
-                        # Skip if camera doesn't support it or other error
                         continue
-                
+
+                # Fallback: if Smart endpoints all failed, try basic motion detection
+                if not found_any:
+                    try:
+                        xml = await client.get_detection_config(camera.channel_no, ISAPIClient.BASIC_MOTION)
+                        snapshot_data[ISAPIClient.BASIC_MOTION] = xml
+                        found_any = True
+                    except Exception:
+                        pass
+
                 if not found_any:
                     raise Exception("Could not retrieve any detection configuration from camera")
                 
@@ -497,14 +505,16 @@ async def _probe_initial_state(camera_ids: list[uuid.UUID], db: AsyncSession) ->
     for camera, nvr in rows:
         client = clients[nvr.id]
         camera_enabled = None  # None = could not determine
-        for d_type in DETECTION_TYPES:
+
+        all_types = DETECTION_TYPES + [ISAPIClient.BASIC_MOTION]
+        for d_type in all_types:
             try:
                 xml = await client.get_detection_config(camera.channel_no, d_type)
                 if _is_enabled_in_xml(xml):
                     camera_enabled = True
                     break
                 else:
-                    camera_enabled = False  # at least one type found, all disabled so far
+                    camera_enabled = False
             except Exception:
                 continue
 
