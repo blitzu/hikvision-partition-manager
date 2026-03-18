@@ -584,6 +584,30 @@ async def admin_logs(level: str = Query(default=""), logger: str = Query(default
     root_level = _logging.getLevelName(root.level)
     memory_in_root = memory_handler in root.handlers
 
+    import os as _os
+    from app.core.logging import LOG_FILE as _LOG_FILE
+    _log_exists = _os.path.exists(_LOG_FILE)
+    _log_size = _os.path.getsize(_LOG_FILE) if _log_exists else 0
+    _raw_sample = ""
+    _emit_error = ""
+    if _log_exists:
+        try:
+            with open(_LOG_FILE) as _f:
+                _raw_sample = _f.readline().strip()[:200]
+        except Exception as _e:
+            _raw_sample = f"read error: {_e}"
+    else:
+        # Try writing a test record to see if emit works
+        import logging as _lg
+        _test_rec = _lg.makeLogRecord({"level": _lg.INFO, "levelname": "INFO", "name": "admin.test",
+                                       "msg": "log page diagnostic write", "exc_info": None})
+        _test_rec.created = __import__("time").time()
+        try:
+            memory_handler.emit(_test_rec)
+            _emit_error = "emit() called — check if file appeared"
+        except Exception as _e:
+            _emit_error = f"emit() raised: {_e}"
+
     records = read_log_records()
     if level:
         records = [r for r in records if r.get("level", "").upper() == level.upper()]
@@ -616,7 +640,11 @@ async def admin_logs(level: str = Query(default=""), logger: str = Query(default
         f"<pre style='background:#f4f4f4;padding:0.5rem;font-size:0.8em'>"
         f"file_handler in root.handlers: {memory_in_root}\n"
         f"root logger level: {root_level}\n"
-        f"root handlers: {handler_names}"
+        f"root handlers: {handler_names}\n"
+        f"log file: {_LOG_FILE}\n"
+        f"log file exists: {_log_exists} | size: {_log_size} bytes\n"
+        f"raw first line: {_raw_sample or '(empty)'}\n"
+        f"emit test: {_emit_error or 'n/a (file already exists)'}"
         f"</pre>"
     )
     html = f"""<!DOCTYPE html>
