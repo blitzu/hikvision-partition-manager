@@ -21,7 +21,7 @@ from app.cameras.routes import router as cameras_router
 from app.core.config import settings
 from app.core.database import async_session_factory, engine
 from app.core.inflight import wait_drain
-from app.core.logging import setup_logging
+from app.core.logging import memory_handler, setup_logging
 from app.jobs.auto_rearm import schedule_rearm
 from app.jobs.monitors import nvr_health_check, stuck_disarmed_monitor
 from app.jobs.scheduler import scheduler
@@ -83,10 +83,12 @@ async def _reconcile_missed_rearm_jobs() -> None:
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan: run migrations on startup, dispose engine on shutdown."""
     await asyncio.to_thread(_run_migrations)
-    # Ensure root level allows INFO after uvicorn overrides it to WARNING
+    # Uvicorn overrides logging on startup — restore our handlers and level
     root_logger = logging.getLogger()
     if root_logger.level > logging.INFO:
         root_logger.setLevel(logging.INFO)
+    if memory_handler not in root_logger.handlers:
+        root_logger.addHandler(memory_handler)
     logger.info("Application started — log viewer available at /admin/logs")
     async with scheduler:
         await scheduler.start_in_background()
