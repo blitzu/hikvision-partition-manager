@@ -1,20 +1,38 @@
-{% if cameras %}
-<table>
-  <thead>
-    <tr>
-      <th>Channel</th>
-      <th>Name</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for cam in cameras %}
-    <tr>
-      <td>{{ cam.channel_no }}</td>
-      <td>{{ cam.name or '—' }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p><em>No cameras synced. Use the camera sync feature from the partition form.</em></p>
-{% endif %}
+<div id="nvr-detail-{{ nvr.id }}">
+  <button type="button"
+          hx-get="/ui/nvrs/{{ nvr.id }}/detail/sync"
+          hx-target="#nvr-detail-{{ nvr.id }}"
+          hx-swap="outerHTML"
+          hx-indicator="#detail-sync-spinner-{{ nvr.id }}"
+          style="margin-bottom: 0.5rem;">Sync Cameras</button>
+  <span id="detail-sync-spinner-{{ nvr.id }}" class="htmx-indicator" style="margin-left: 0.4rem;">⟳</span>
+
+  {% if sync_result is defined %}
+    {% if sync_result.success %}
+      <span style="color: green; margin-left: 0.5rem;"><small>Synced {{ sync_result.count }} camera{{ 's' if sync_result.count != 1 else '' }}.</small></span>
+    {% else %}
+      <span style="color: red; margin-left: 0.5rem;"><small>Sync failed: {{ sync_result.error }}</small></span>
+    {% endif %}
+  {% endif %}
+
+  {% if cameras %}
+  <table>
+    <thead>
+      <tr>
+        <th>Channel</th>
+        <th>Name</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cam in cameras %}
+      <tr>
+        <td>{{ cam.channel_no }}</td>
+        <td>{{ cam.name or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p><em>No cameras synced yet.</em></p>
+  {% endif %}
+</div>

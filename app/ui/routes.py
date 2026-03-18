@@ -535,6 +535,22 @@ async def nvr_detail_partial(
     )
 
 
+@ui_router.get("/ui/nvrs/{nvr_id}/detail/sync", response_class=HTMLResponse)
+async def nvr_detail_sync_partial(
+    nvr_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    sync_result = await sync_cameras_from_nvr(nvr_id, db)
+    nvr = await db.get(NVRDevice, nvr_id)
+    cam_result = await db.execute(select(Camera).where(Camera.nvr_id == nvr_id))
+    cameras = cam_result.scalars().all()
+    return templates.TemplateResponse(
+        "partials/nvr_detail_section.html",
+        {"request": request, "nvr": nvr, "cameras": cameras, "sync_result": sync_result},
+    )
+
+
 @ui_router.get("/ui/nvrs/{nvr_id}/test", response_class=HTMLResponse)
 async def nvr_test_connectivity(
     nvr_id: uuid.UUID,
