@@ -37,6 +37,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.cameras.models import Camera
 from app.cameras.service import sync_cameras_from_nvr
+from app.core.logging import memory_handler
 from app.core.config import settings
 from app.core.database import get_db
 from app.locations.models import Location
@@ -566,6 +567,64 @@ async def nvr_test_connectivity(
     else:
         error_msg = data.get("error", "unknown")
         return HTMLResponse(f'<span style="color:red">Offline — {error_msg}</span>')
+
+
+@ui_router.get("/admin/logs", response_class=HTMLResponse)
+async def admin_logs(level: str = Query(default=""), logger: str = Query(default="")):
+    records = list(memory_handler.records)
+    if level:
+        records = [r for r in records if r.get("level", "").upper() == level.upper()]
+    if logger:
+        records = [r for r in records if logger.lower() in r.get("logger", "").lower()]
+
+    level_colors = {"ERROR": "#c0392b", "WARNING": "#e07000", "INFO": "#2980b9", "DEBUG": "#7f8c8d"}
+
+    rows = []
+    for r in records:
+        color = level_colors.get(r.get("level", ""), "#333")
+        ts = r.get("timestamp", "")
+        lvl = r.get("level", "")
+        log = r.get("logger", "")
+        msg = r.get("message", "")
+        extras = {k: v for k, v in r.items() if k not in ("timestamp", "level", "logger", "message", "request_id")}
+        extras_str = " &nbsp;|&nbsp; ".join(f"<b>{k}</b>: {v}" for k, v in extras.items())
+        rows.append(
+            f'<tr style="color:{color}">'
+            f"<td style='white-space:nowrap'>{ts}</td>"
+            f"<td><b>{lvl}</b></td>"
+            f"<td style='color:#555'>{log}</td>"
+            f"<td>{msg}</td>"
+            f"<td style='font-size:0.8em;color:#555'>{extras_str}</td>"
+            f"</tr>"
+        )
+
+    table = "\n".join(rows) if rows else "<tr><td colspan='5'><em>No records.</em></td></tr>"
+    html = f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Logs — Partition Manager</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css">
+<style>table{{font-size:0.82em}} td{{padding:0.2rem 0.5rem;vertical-align:top}} tr:hover{{background:rgba(0,0,0,0.04)}}</style>
+</head><body><main class="container">
+<h2>Application Logs <small style="font-size:0.5em">({len(records)} records)</small></h2>
+<form method="get" style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem">
+  <select name="level" style="width:auto">
+    <option value="">All levels</option>
+    <option value="ERROR" {'selected' if level=='ERROR' else ''}>ERROR</option>
+    <option value="WARNING" {'selected' if level=='WARNING' else ''}>WARNING</option>
+    <option value="INFO" {'selected' if level=='INFO' else ''}>INFO</option>
+    <option value="DEBUG" {'selected' if level=='DEBUG' else ''}>DEBUG</option>
+  </select>
+  <input type="text" name="logger" placeholder="Filter by logger" value="{logger}" style="width:auto">
+  <button type="submit">Filter</button>
+  <a href="/admin/logs">Clear filters</a>
+</form>
+<div style="overflow-x:auto">
+<table>
+  <thead><tr><th>Timestamp</th><th>Level</th><th>Logger</th><th>Message</th><th>Extra</th></tr></thead>
+  <tbody>{table}</tbody>
+</table>
+</div>
+</main></body></html>"""
+    return HTMLResponse(html)
 
 
 @ui_router.get("/locations", response_class=HTMLResponse)
