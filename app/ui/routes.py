@@ -37,7 +37,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.cameras.models import Camera
 from app.cameras.service import sync_cameras_from_nvr
-from app.core.logging import memory_handler
+from app.core.logging import memory_handler, read_log_records
 from app.core.config import settings
 from app.core.database import get_db
 from app.locations.models import Location
@@ -578,17 +578,13 @@ async def nvr_test_connectivity(
 
 @ui_router.get("/admin/logs", response_class=HTMLResponse)
 async def admin_logs(level: str = Query(default=""), logger: str = Query(default="")):
-    # Emit a test record every time the page is loaded so we can verify the handler works
     import logging as _logging
-    _test_logger = _logging.getLogger("admin.logs")
-    _test_logger.warning("admin/logs page visited — handler check")
-
     root = _logging.getLogger()
     handler_names = [type(h).__name__ for h in root.handlers]
     root_level = _logging.getLevelName(root.level)
     memory_in_root = memory_handler in root.handlers
 
-    records = list(memory_handler.records)
+    records = read_log_records()
     if level:
         records = [r for r in records if r.get("level", "").upper() == level.upper()]
     if logger:

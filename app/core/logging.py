@@ -46,21 +46,17 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(log_obj, default=str)
 
 
-class MemoryLogHandler(logging.Handler):
-    """Keeps the last `maxlen` log records in memory for /admin/logs.
+LOG_FILE = "/tmp/app.log"
+_MAX_LINES = 500
 
-    Builds the entry dict directly from the LogRecord so it never
-    depends on a formatter being set — avoids silent emit failures.
-    """
 
-    def __init__(self, maxlen: int = 500) -> None:
-        super().__init__()
-        self.records: collections.deque = collections.deque(maxlen=maxlen)
+class FileLogHandler(logging.Handler):
+    """Appends log records to LOG_FILE as JSON lines."""
 
     def emit(self, record: logging.LogRecord) -> None:
         try:
             ts = datetime.datetime.fromtimestamp(record.created).strftime("%Y-%m-%dT%H:%M:%S")
-            entry: dict = {
+            entry = {
                 "timestamp": ts,
                 "level": record.levelname,
                 "logger": record.name,
@@ -72,16 +68,34 @@ class MemoryLogHandler(logging.Handler):
             entry.pop("password", None)
             if record.exc_info:
                 entry["exception"] = self.formatException(record.exc_info)
-            self.records.appendleft(entry)
+            with open(LOG_FILE, "a") as f:
+                f.write(json.dumps(entry) + "\n")
         except Exception:
             pass
 
 
-memory_handler = MemoryLogHandler(maxlen=500)
+# Keep memory_handler name for backwards compat with imports
+memory_handler = FileLogHandler()
+
+
+def read_log_records(max_lines: int = _MAX_LINES) -> list[dict]:
+    """Read the last max_lines records from the log file."""
+    try:
+        with open(LOG_FILE) as f:
+            lines = f.readlines()
+        records = []
+        for line in reversed(lines[-max_lines:]):
+            try:
+                records.append(json.loads(line))
+            except Exception:
+                pass
+        return records
+    except FileNotFoundError:
+        return []
 
 
 def setup_logging(log_level: str = "INFO") -> None:
-    """Configure root logger to emit structured JSON to stderr + memory."""
+    """Configure root logger to emit structured JSON to stderr + log file."""
     formatter = JsonFormatter()
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter)
