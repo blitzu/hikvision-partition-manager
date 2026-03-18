@@ -36,26 +36,26 @@
 
 ### Disarm Operation
 
-- [ ] **DARM-01**: External VMS can POST disarm with disarmed_by and optional reason
-- [ ] **DARM-02**: Before disarming, system checks connectivity of all involved NVRs; on failure, sets state=error and returns error
-- [ ] **DARM-03**: For each camera, system reads current detection config from all 4 ISAPI endpoints (motionDetection, LineDetection, FieldDetection, shelteralarm); saves only endpoints returning HTTP 200
-- [ ] **DARM-04**: If a camera already has a snapshot (still disarmed from a prior operation), system does NOT overwrite the existing snapshot
-- [ ] **DARM-05**: System disables all detection types that were enabled=true in the snapshot via PUT ISAPI, preserving all other settings
-- [ ] **DARM-06**: System adds partition_id to camera's disarmed_by_partitions array (refcount increment)
-- [ ] **DARM-07**: If auto_rearm_minutes is set, system schedules a rearm job at the calculated time
-- [ ] **DARM-08**: System appends audit log entry for disarm action
-- [ ] **DARM-09**: Response includes cameras_disarmed count, cameras_kept_disarmed_by_other_partition count, scheduled_rearm_at, errors list
-- [ ] **DARM-10**: ISAPI calls to cameras on the same NVR are executed in parallel, not sequentially
+- [x] **DARM-01**: External VMS can POST disarm with disarmed_by and optional reason
+- [x] **DARM-02**: Before disarming, system checks connectivity of all involved NVRs; on failure, sets state=error and returns error
+- [x] **DARM-03**: For each camera, system reads current detection config from all 4 ISAPI endpoints (motionDetection, LineDetection, FieldDetection, shelteralarm); saves only endpoints returning HTTP 200
+- [x] **DARM-04**: If a camera already has a snapshot (still disarmed from a prior operation), system does NOT overwrite the existing snapshot
+- [x] **DARM-05**: System disables all detection types that were enabled=true in the snapshot via PUT ISAPI, preserving all other settings
+- [x] **DARM-06**: System adds partition_id to camera's disarmed_by_partitions array (refcount increment)
+- [x] **DARM-07**: If auto_rearm_minutes is set, system schedules a rearm job at the calculated time
+- [x] **DARM-08**: System appends audit log entry for disarm action
+- [x] **DARM-09**: Response includes cameras_disarmed count, cameras_kept_disarmed_by_other_partition count, scheduled_rearm_at, errors list
+- [x] **DARM-10**: ISAPI calls to cameras on the same NVR are executed in parallel, not sequentially
 
 ### Arm Operation
 
-- [ ] **ARM-01**: External VMS can POST arm with armed_by
-- [ ] **ARM-02**: System removes this partition_id from each camera's disarmed_by_partitions array (refcount decrement)
-- [ ] **ARM-03**: For cameras where refcount reaches 0: system restores detection config from snapshot via PUT ISAPI, then deletes snapshot record
-- [ ] **ARM-04**: For cameras where refcount > 0: system logs that camera stays disarmed, does NOT restore detection
-- [ ] **ARM-05**: System cancels any pending scheduled rearm job for this partition
-- [ ] **ARM-06**: System appends audit log entry for arm action
-- [ ] **ARM-07**: Response includes cameras_restored count, cameras_kept_disarmed count, errors list
+- [x] **ARM-01**: External VMS can POST arm with armed_by
+- [x] **ARM-02**: System removes this partition_id from each camera's disarmed_by_partitions array (refcount decrement)
+- [x] **ARM-03**: For cameras where refcount reaches 0: system restores detection config from snapshot via PUT ISAPI, then deletes snapshot record
+- [x] **ARM-04**: For cameras where refcount > 0: system logs that camera stays disarmed, does NOT restore detection
+- [x] **ARM-05**: System cancels any pending scheduled rearm job for this partition
+- [x] **ARM-06**: System appends audit log entry for arm action
+- [x] **ARM-07**: Response includes cameras_restored count, cameras_kept_disarmed count, errors list
 
 ### ISAPI HTTP Client
 
@@ -146,28 +146,28 @@
 | NVR-04 | Phase 1 | Complete |
 | NVR-05 | Phase 1 | Complete |
 | NVR-06 | Phase 1 | Complete |
-| ISAPI-01 | Phase 8 (gap) | Pending |
-| ISAPI-02 | Phase 8 (gap) | Pending |
+| ISAPI-01 | Phase 2 | Complete |
+| ISAPI-02 | Phase 2 | Complete |
 | ISAPI-03 | Phase 7 (gap) | Complete |
-| ISAPI-04 | Phase 8 (gap) | Pending |
-| ISAPI-05 | Phase 8 (gap) | Pending |
-| DARM-01 | Phase 8 (gap) | Pending |
-| DARM-02 | Phase 8 (gap) | Pending |
-| DARM-03 | Phase 8 (gap) | Pending |
-| DARM-04 | Phase 8 (gap) | Pending |
-| DARM-05 | Phase 8 (gap) | Pending |
-| DARM-06 | Phase 8 (gap) | Pending |
-| DARM-07 | Phase 8 (gap) | Pending |
-| DARM-08 | Phase 8 (gap) | Pending |
-| DARM-09 | Phase 8 (gap) | Pending |
-| DARM-10 | Phase 8 (gap) | Pending |
-| ARM-01 | Phase 8 (gap) | Pending |
-| ARM-02 | Phase 8 (gap) | Pending |
-| ARM-03 | Phase 8 (gap) | Pending |
-| ARM-04 | Phase 8 (gap) | Pending |
-| ARM-05 | Phase 8 (gap) | Pending |
-| ARM-06 | Phase 8 (gap) | Pending |
-| ARM-07 | Phase 8 (gap) | Pending |
+| ISAPI-04 | Phase 2 | Complete |
+| ISAPI-05 | Phase 2 | Complete |
+| DARM-01 | Phase 2 | Complete |
+| DARM-02 | Phase 2 | Complete |
+| DARM-03 | Phase 2 | Complete |
+| DARM-04 | Phase 2 | Complete |
+| DARM-05 | Phase 2 | Complete |
+| DARM-06 | Phase 2 | Complete |
+| DARM-07 | Phase 2 | Complete |
+| DARM-08 | Phase 2 | Complete |
+| DARM-09 | Phase 2 | Complete |
+| DARM-10 | Phase 2 | Complete |
+| ARM-01 | Phase 2 | Complete |
+| ARM-02 | Phase 2 | Complete |
+| ARM-03 | Phase 2 | Complete |
+| ARM-04 | Phase 2 | Complete |
+| ARM-05 | Phase 2 | Complete |
+| ARM-06 | Phase 2 | Complete |
+| ARM-07 | Phase 2 | Complete |
 | PART-01 | Phase 3 | Complete |
 | PART-02 | Phase 3 | Complete |
 | PART-03 | Phase 3 | Complete |
@@ -204,7 +204,7 @@
 - v1 requirements: 68 total
 - Mapped to phases: 68
 - Unmapped: 0
-- Pending gap closure (Phases 7–8): 22 (ISAPI-01..05, DARM-01..10, ARM-01..07)
+- Pending gap closure: 0 — all requirements complete as of Phase 08 retroverification (2026-03-17)
 
 ---
 *Requirements defined: 2026-03-10*
