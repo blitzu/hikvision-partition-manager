@@ -83,12 +83,16 @@ async def _reconcile_missed_rearm_jobs() -> None:
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan: run migrations on startup, dispose engine on shutdown."""
     await asyncio.to_thread(_run_migrations)
-    # Uvicorn overrides logging on startup — restore our handlers and level
+    # Uvicorn's dictConfig(disable_existing_loggers=True) disables all loggers created
+    # before uvicorn starts. Re-enable them and restore our file handler.
     root_logger = logging.getLogger()
     if root_logger.level > logging.INFO:
         root_logger.setLevel(logging.INFO)
     if memory_handler not in root_logger.handlers:
         root_logger.addHandler(memory_handler)
+    for _lgr in logging.Logger.manager.loggerDict.values():
+        if isinstance(_lgr, logging.Logger) and _lgr.disabled:
+            _lgr.disabled = False
     logger.info("Application started — log viewer available at /admin/logs")
     async with scheduler:
         await scheduler.start_in_background()
