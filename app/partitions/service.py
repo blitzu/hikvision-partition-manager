@@ -1,3 +1,4 @@
+import re
 import uuid
 import asyncio
 import xml.etree.ElementTree as ET
@@ -61,13 +62,18 @@ def _is_enabled_in_xml(xml_text: str) -> bool:
 
 
 def _disable_in_xml(xml_text: str) -> str:
-    """Set the 'enabled' element in the XML to 'false'."""
-    root = ET.fromstring(xml_text)
-    for el in root.iter():
-        if el.tag.split("}")[-1] == "enabled":
-            el.text = "false"
-            break
-    return ET.tostring(root, encoding="unicode")
+    """Set the 'enabled' element in the XML to 'false'.
+
+    Uses regex replacement to preserve the original XML structure and namespace
+    declarations exactly as received from the NVR. Re-serializing via ET.tostring
+    mangles Hikvision namespace prefixes and causes 400 Bad Request on PUT.
+    """
+    return re.sub(
+        r"(<(?:[^:>]+:)?enabled\s*>)\s*true\s*(</(?:[^:>]+:)?enabled\s*>)",
+        r"\g<1>false\2",
+        xml_text,
+        flags=re.IGNORECASE,
+    )
 
 
 async def disarm_partition(
