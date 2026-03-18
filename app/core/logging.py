@@ -1,15 +1,15 @@
 """Structured JSON logging for the Hikvision Partition Manager.
 
 JsonFormatter: formats every log record as a single-line JSON object.
-MemoryLogHandler: keeps the last 500 records in memory for /admin/logs.
+FileLogHandler: appends log records to LOG_FILE as JSON lines for /admin/logs.
 setup_logging: configures the root logger with JsonFormatter on StreamHandler.
 
 NVR-06 security: password fields are scrubbed from all log output.
 """
-import collections
 import datetime
 import json
 import logging
+import traceback
 
 # Standard LogRecord instance attributes — excluded from the "extra" fields display
 _SKIP_ATTRS: frozenset = frozenset({
@@ -67,7 +67,7 @@ class FileLogHandler(logging.Handler):
                     entry[key] = str(val)
             entry.pop("password", None)
             if record.exc_info:
-                entry["exception"] = self.formatException(record.exc_info)
+                entry["exception"] = "".join(traceback.format_exception(*record.exc_info))
             with open(LOG_FILE, "a") as f:
                 f.write(json.dumps(entry) + "\n")
         except Exception:

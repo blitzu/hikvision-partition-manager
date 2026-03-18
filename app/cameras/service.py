@@ -52,7 +52,18 @@ async def sync_cameras_from_nvr(
         )
         nvr.status = "offline"
         await db.commit()
-        return {"success": False, "count": 0, "error": f"HTTP {exc.response.status_code} from NVR"}
+        status = exc.response.status_code
+        if status == 403:
+            error = (
+                "HTTP 403 from NVR — access denied. "
+                "Check that the NVR username and password are correct and that the "
+                "account has Operator-level (or higher) permissions on the NVR."
+            )
+        elif status == 401:
+            error = "HTTP 401 from NVR — authentication failed. Check NVR username and password."
+        else:
+            error = f"HTTP {status} from NVR"
+        return {"success": False, "count": 0, "error": error}
     except httpx.TimeoutException:
         logger.error(
             "Camera sync failed — timeout connecting to NVR",
