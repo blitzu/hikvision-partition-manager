@@ -652,6 +652,35 @@ async def nvr_delete(
     return RedirectResponse("/nvrs", status_code=303)
 
 
+@ui_router.post("/ui/nvrs/{nvr_id}/update", response_class=HTMLResponse)
+async def nvr_update_submit(
+    nvr_id: uuid.UUID,
+    request: Request,
+    name: str = Form(...),
+    ip_address: str = Form(...),
+    port: int = Form(...),
+    username: str = Form(...),
+    password: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    payload = {"name": name, "ip_address": ip_address, "port": port, "username": username}
+    if password:
+        payload["password"] = password
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.patch(
+                f"{settings.BASE_URL}/api/nvrs/{nvr_id}",
+                json=payload,
+                timeout=10.0,
+            )
+            data = resp.json()
+        except Exception as exc:
+            return RedirectResponse(f"/nvrs?error={exc}", status_code=303)
+    if not data.get("success"):
+        return RedirectResponse(f"/nvrs?error={data.get('error', 'Update failed')}", status_code=303)
+    return RedirectResponse("/nvrs", status_code=303)
+
+
 @ui_router.post("/ui/nvrs/create", response_class=HTMLResponse)
 async def nvr_create_submit(
     request: Request,

@@ -74,11 +74,32 @@
                 hx-swap="innerHTML">Show Cameras</button>
       </td>
       <td>
+        <button class="outline" onclick="document.getElementById('edit-modal-{{ nvr.id }}').showModal()">Edit</button>
         <form method="post" action="/ui/nvrs/{{ nvr.id }}/delete"
               onsubmit="return confirm('Stergi NVR-ul {{ nvr.name }}?')"
               style="display:inline">
           <button type="submit" class="outline">Delete</button>
         </form>
+
+        <dialog id="edit-modal-{{ nvr.id }}">
+          <article>
+            <header>
+              <button aria-label="Close" rel="prev" onclick="document.getElementById('edit-modal-{{ nvr.id }}').close()"></button>
+              <h3>Edit NVR — {{ nvr.name }}</h3>
+            </header>
+            <form method="post" action="/ui/nvrs/{{ nvr.id }}/update">
+              <label>Name <input type="text" name="name" value="{{ nvr.name }}" required></label>
+              <label>IP Address <input type="text" name="ip_address" value="{{ nvr.ip_address }}" required></label>
+              <label>Port <input type="number" name="port" value="{{ nvr.port }}" required></label>
+              <label>Username <input type="text" name="username" value="{{ nvr.username }}" required></label>
+              <label>Password <input type="password" name="password" placeholder="Lasă gol pentru a păstra parola curentă"></label>
+              <footer>
+                <button type="button" class="outline" onclick="document.getElementById('edit-modal-{{ nvr.id }}').close()">Anulează</button>
+                <button type="submit">Salvează</button>
+              </footer>
+            </form>
+          </article>
+        </dialog>
       </td>
     </tr>
     <tr>

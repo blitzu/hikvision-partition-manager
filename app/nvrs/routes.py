@@ -23,7 +23,7 @@ from app.core.schemas import APIResponse
 from app.isapi.client import ISAPIClient
 from app.locations.models import Location
 from app.nvrs.models import NVRDevice
-from app.nvrs.schemas import NVRCreate, NVRRead
+from app.nvrs.schemas import NVRCreate, NVRRead, NVRUpdate
 
 router = APIRouter(prefix="/api", tags=["nvrs"])
 
@@ -85,6 +85,37 @@ async def list_nvrs(
         success=True,
         data=[NVRRead.model_validate(nvr) for nvr in nvrs],
     )
+
+
+@router.patch(
+    "/nvrs/{nvr_id}",
+    response_model=APIResponse[NVRRead],
+)
+async def update_nvr(
+    nvr_id: uuid.UUID,
+    body: NVRUpdate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> APIResponse[NVRRead]:
+    """Update NVR device fields. Only provided fields are changed.
+    If password is provided, it is encrypted before DB write (NVR-06).
+    """
+    nvr = await db.get(NVRDevice, nvr_id)
+    if nvr is None:
+        return APIResponse(success=False, error="NVR not found")
+
+    if body.name is not None:
+        nvr.name = body.name
+    if body.ip_address is not None:
+        nvr.ip_address = body.ip_address
+    if body.port is not None:
+        nvr.port = body.port
+    if body.username is not None:
+        nvr.username = body.username
+    if body.password is not None:
+        nvr.password_encrypted = encrypt_password(body.password)
+
+    await db.commit()
+    return APIResponse(success=True, data=NVRRead.model_validate(nvr))
 
 
 @router.get(

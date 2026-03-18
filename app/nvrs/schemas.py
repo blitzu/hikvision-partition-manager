@@ -26,6 +26,16 @@ class NVRCreate(BaseModel):
     password: str  # plaintext on create only — NEVER returned
 
 
+class NVRUpdate(BaseModel):
+    """Input schema for updating an NVR device. All fields optional."""
+
+    name: str | None = None
+    ip_address: str | None = None
+    port: int | None = None
+    username: str | None = None
+    password: str | None = None  # plaintext — encrypted before DB write if provided
+
+
 class NVRRead(BaseModel):
     """Output schema for an NVR device.
 
