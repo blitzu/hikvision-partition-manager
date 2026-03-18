@@ -11,10 +11,13 @@ import datetime
 import json
 import logging
 
-# Standard LogRecord attributes — excluded from the "extra" fields display
-_SKIP_ATTRS: frozenset = frozenset(logging.LogRecord.__dict__) | {
-    "message", "asctime", "args", "msg", "taskName",
-}
+# Standard LogRecord instance attributes — excluded from the "extra" fields display
+_SKIP_ATTRS: frozenset = frozenset({
+    "name", "msg", "args", "levelname", "levelno", "pathname", "filename",
+    "module", "exc_info", "exc_text", "stack_info", "lineno", "funcName",
+    "created", "msecs", "relativeCreated", "thread", "threadName",
+    "processName", "process", "message", "asctime", "taskName",
+})
 
 
 class JsonFormatter(logging.Formatter):

@@ -87,6 +87,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     root_logger = logging.getLogger()
     if memory_handler not in root_logger.handlers:
         root_logger.addHandler(memory_handler)
+    # Ensure root level allows INFO so sync logs are captured
+    if root_logger.level > logging.INFO:
+        root_logger.setLevel(logging.INFO)
     logger.info("Application started — log viewer available at /admin/logs")
     async with scheduler:
         await scheduler.start_in_background()
