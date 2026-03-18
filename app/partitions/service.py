@@ -457,11 +457,67 @@ async def arm_partition(
 # ---------------------------------------------------------------------------
 
 
+async def _probe_initial_state(camera_ids: list[uuid.UUID], db: AsyncSession) -> str:
+    """Query NVR detection configs to determine the real current state.
+
+    Returns "disarmed" if ALL cameras have ALL supported detection types disabled.
+    Returns "armed" in all other cases (including errors or mixed state).
+    """
+    if not camera_ids:
+        return "armed"
+
+    stmt = (
+        select(Camera, NVRDevice)
+        .join(NVRDevice, NVRDevice.id == Camera.nvr_id)
+        .where(Camera.id.in_(camera_ids))
+    )
+    result = await db.execute(stmt)
+    rows = result.all()
+    if not rows:
+        return "armed"
+
+    # Build one ISAPIClient per NVR
+    clients: dict[uuid.UUID, ISAPIClient] = {}
+    for camera, nvr in rows:
+        if nvr.id not in clients:
+            clients[nvr.id] = ISAPIClient(
+                nvr.ip_address, nvr.port, nvr.username, decrypt_password(nvr.password_encrypted)
+            )
+
+    # For each camera, check if any detection type is enabled
+    any_enabled = False
+    any_checked = False
+    for camera, nvr in rows:
+        client = clients[nvr.id]
+        for d_type in DETECTION_TYPES:
+            try:
+                xml = await client.get_detection_config(camera.channel_no, d_type)
+                any_checked = True
+                if _is_enabled_in_xml(xml):
+                    any_enabled = True
+                    break
+            except Exception:
+                continue
+        if any_enabled:
+            break
+
+    if not any_checked:
+        # Could not reach NVR at all — default to armed
+        return "armed"
+
+    return "armed" if any_enabled else "disarmed"
+
+
 async def create_partition(
     body: PartitionCreate,
     db: AsyncSession,
 ) -> PartitionRead:
-    """Create a new partition with initial PartitionState (armed) and optional cameras."""
+    """Create a new partition with initial PartitionState and optional cameras.
+
+    The initial state is probed from the NVR: if all cameras' detections are
+    currently disabled the partition starts as 'disarmed', otherwise 'armed'.
+    Falls back to 'armed' if the NVR is unreachable.
+    """
     partition = Partition(
         name=body.name,
         description=body.description,
@@ -472,8 +528,10 @@ async def create_partition(
     db.add(partition)
     await db.flush()
 
-    # Create initial PartitionState
-    state = PartitionState(partition_id=partition.id, state="armed")
+    # Probe the real current state from the NVR before committing
+    initial_state = await _probe_initial_state(body.camera_ids or [], db)
+
+    state = PartitionState(partition_id=partition.id, state=initial_state)
     db.add(state)
 
     # Add camera memberships if provided
