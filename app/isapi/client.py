@@ -29,7 +29,8 @@ class ISAPIClient:
     """
 
     def __init__(self, host: str, port: int, username: str, password: str) -> None:
-        self.base_url = f"http://{host}:{port}"
+        scheme = "https" if port == 443 else "http"
+        self.base_url = f"{scheme}://{host}:{port}"
         self._auth = httpx.DigestAuth(username, password)
         self._client_kwargs: dict = {
             "auth": self._auth,
