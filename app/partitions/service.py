@@ -460,8 +460,15 @@ async def arm_partition(
 async def _probe_initial_state(camera_ids: list[uuid.UUID], db: AsyncSession) -> str:
     """Query NVR detection configs to determine the real current state.
 
-    Returns "disarmed" if ALL cameras have ALL supported detection types disabled.
-    Returns "armed" in all other cases (including errors or mixed state).
+    Per-camera result: a camera is considered "armed" if at least one detection
+    type is enabled; "disarmed" if all supported detection types are disabled.
+    Cameras that cannot be reached are skipped.
+
+    Returns:
+      "armed"   — all reachable cameras are armed
+      "disarmed" — all reachable cameras are disarmed
+      "partial"  — mix of armed and disarmed cameras
+      "armed"   — fallback when no camera could be reached
     """
     if not camera_ids:
         return "armed"
@@ -484,28 +491,37 @@ async def _probe_initial_state(camera_ids: list[uuid.UUID], db: AsyncSession) ->
                 nvr.ip_address, nvr.port, nvr.username, decrypt_password(nvr.password_encrypted)
             )
 
-    # For each camera, check if any detection type is enabled
-    any_enabled = False
-    any_checked = False
+    armed_count = 0
+    disarmed_count = 0
+
     for camera, nvr in rows:
         client = clients[nvr.id]
+        camera_enabled = None  # None = could not determine
         for d_type in DETECTION_TYPES:
             try:
                 xml = await client.get_detection_config(camera.channel_no, d_type)
-                any_checked = True
                 if _is_enabled_in_xml(xml):
-                    any_enabled = True
+                    camera_enabled = True
                     break
+                else:
+                    camera_enabled = False  # at least one type found, all disabled so far
             except Exception:
                 continue
-        if any_enabled:
-            break
 
-    if not any_checked:
-        # Could not reach NVR at all — default to armed
+        if camera_enabled is True:
+            armed_count += 1
+        elif camera_enabled is False:
+            disarmed_count += 1
+        # None (unreachable) is ignored
+
+    total = armed_count + disarmed_count
+    if total == 0:
+        return "armed"  # could not reach any camera — safe default
+    if armed_count == total:
         return "armed"
-
-    return "armed" if any_enabled else "disarmed"
+    if disarmed_count == total:
+        return "disarmed"
+    return "partial"
 
 
 async def create_partition(
