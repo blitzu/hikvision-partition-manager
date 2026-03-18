@@ -571,6 +571,16 @@ async def nvr_test_connectivity(
 
 @ui_router.get("/admin/logs", response_class=HTMLResponse)
 async def admin_logs(level: str = Query(default=""), logger: str = Query(default="")):
+    # Emit a test record every time the page is loaded so we can verify the handler works
+    import logging as _logging
+    _test_logger = _logging.getLogger("admin.logs")
+    _test_logger.warning("admin/logs page visited — handler check")
+
+    root = _logging.getLogger()
+    handler_names = [type(h).__name__ for h in root.handlers]
+    root_level = _logging.getLevelName(root.level)
+    memory_in_root = memory_handler in root.handlers
+
     records = list(memory_handler.records)
     if level:
         records = [r for r in records if r.get("level", "").upper() == level.upper()]
@@ -599,12 +609,21 @@ async def admin_logs(level: str = Query(default=""), logger: str = Query(default
         )
 
     table = "\n".join(rows) if rows else "<tr><td colspan='5'><em>No records.</em></td></tr>"
+    debug_info = (
+        f"<pre style='background:#f4f4f4;padding:0.5rem;font-size:0.8em'>"
+        f"memory_handler in root.handlers: {memory_in_root}\n"
+        f"root logger level: {root_level}\n"
+        f"root handlers: {handler_names}\n"
+        f"memory_handler.records deque size: {len(memory_handler.records)}"
+        f"</pre>"
+    )
     html = f"""<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>Logs — Partition Manager</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css">
 <style>table{{font-size:0.82em}} td{{padding:0.2rem 0.5rem;vertical-align:top}} tr:hover{{background:rgba(0,0,0,0.04)}}</style>
 </head><body><main class="container">
 <h2>Application Logs <small style="font-size:0.5em">({len(records)} records)</small></h2>
+{debug_info}
 <form method="get" style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem">
   <select name="level" style="width:auto">
     <option value="">All levels</option>
