@@ -471,7 +471,7 @@ async def arm_partition(
 # ---------------------------------------------------------------------------
 
 
-async def _probe_initial_state(camera_ids: list[uuid.UUID], db: AsyncSession) -> str:
+async def probe_partition_state(camera_ids: list[uuid.UUID], db: AsyncSession) -> str:
     """Query NVR detection configs to determine the real current state.
 
     Per-camera result: a camera is considered "armed" if at least one detection
@@ -561,7 +561,7 @@ async def create_partition(
     await db.flush()
 
     # Probe the real current state from the NVR before committing
-    initial_state = await _probe_initial_state(body.camera_ids or [], db)
+    initial_state = await probe_partition_state(body.camera_ids or [], db)
 
     state = PartitionState(partition_id=partition.id, state=initial_state)
     db.add(state)

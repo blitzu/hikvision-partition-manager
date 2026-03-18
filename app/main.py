@@ -23,7 +23,7 @@ from app.core.database import async_session_factory, engine
 from app.core.inflight import wait_drain
 from app.core.logging import memory_handler, setup_logging
 from app.jobs.auto_rearm import schedule_rearm
-from app.jobs.monitors import nvr_health_check, stuck_disarmed_monitor
+from app.jobs.monitors import nvr_health_check, partition_state_sync, stuck_disarmed_monitor
 from app.jobs.scheduler import scheduler
 from app.locations.routes import router as locations_router
 from app.middleware.logging import RequestLoggingMiddleware
@@ -109,6 +109,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             nvr_health_check,
             IntervalTrigger(seconds=60),
             id="nvr_health_check",
+            conflict_policy=ConflictPolicy.replace,
+        )
+        # Register partition state sync: every 10 seconds
+        await scheduler.add_schedule(
+            partition_state_sync,
+            IntervalTrigger(seconds=10),
+            id="partition_state_sync",
             conflict_policy=ConflictPolicy.replace,
         )
         yield

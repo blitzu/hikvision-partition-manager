@@ -20,7 +20,9 @@ from app.isapi.client import ISAPIClient
 from app.jobs.auto_rearm import deliver_webhook
 from app.locations.models import Location
 from app.nvrs.models import NVRDevice
-from app.partitions.models import Partition, PartitionState
+from app.cameras.models import Camera
+from app.partitions.models import Partition, PartitionCamera, PartitionState
+from app.partitions.service import probe_partition_state
 
 logger = logging.getLogger(__name__)
 
@@ -173,5 +175,48 @@ async def nvr_health_check() -> None:
                 logger.info("NVR online recovery alert fired for %s (%s).", nvr.id, nvr.name)
 
             _nvr_prev_status[nvr.id] = new_status
+
+        await db.commit()
+
+
+async def partition_state_sync() -> None:
+    """Probe each partition's real NVR state and sync the DB if it changed externally.
+
+    Runs every 10 seconds. Detects manual arm/disarm performed directly on the NVR.
+    Skips partitions with no cameras. Skips cameras that cannot be reached.
+    """
+    async with async_session_factory() as db:
+        stmt = (
+            select(Partition, PartitionState)
+            .join(PartitionState, PartitionState.partition_id == Partition.id)
+            .where(Partition.deleted_at.is_(None))
+        )
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        for partition, state in rows:
+            # Get camera IDs for this partition
+            cam_stmt = select(PartitionCamera.camera_id).where(
+                PartitionCamera.partition_id == partition.id
+            )
+            cam_result = await db.execute(cam_stmt)
+            camera_ids = [row[0] for row in cam_result.all()]
+            if not camera_ids:
+                continue
+
+            try:
+                actual = await probe_partition_state(camera_ids, db)
+            except Exception as exc:
+                logger.debug("State sync probe failed for partition %s: %s", partition.id, exc)
+                continue
+
+            if actual != state.state:
+                logger.info(
+                    "Partition %s (%s) state changed externally: %s -> %s",
+                    partition.id, partition.name, state.state, actual,
+                )
+                state.state = actual
+                state.last_changed_at = datetime.now(timezone.utc)
+                state.last_changed_by = "nvr_sync"
 
         await db.commit()
