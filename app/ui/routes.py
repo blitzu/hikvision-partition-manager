@@ -592,7 +592,7 @@ async def admin_logs(level: str = Query(default=""), logger: str = Query(default
     import logging as _lg2
     from app.core.logging import LOG_FILE as _LOG_FILE
 
-    # Force-emit a real test record and capture any exception + stderr output
+    # Test 1: direct emit()
     _size_before = _os.path.getsize(_LOG_FILE) if _os.path.exists(_LOG_FILE) else 0
     _test_rec = _lg2.LogRecord(
         name="admin.diagnostic", level=_lg2.INFO, pathname="", lineno=0,
@@ -610,6 +610,23 @@ async def admin_logs(level: str = Query(default=""), logger: str = Query(default
     _captured_stderr = _captured_err.getvalue()
     _size_after = _os.path.getsize(_LOG_FILE) if _os.path.exists(_LOG_FILE) else 0
     _emit_grew = _size_after > _size_before
+
+    # Test 2: via logger.info() — tests the full logging chain
+    _via_logger = _lg2.getLogger("admin.via_logger")
+    _via_logger_disabled = _via_logger.disabled
+    _via_logger_propagate = _via_logger.propagate
+    _via_logger_level = _via_logger.level
+    _size_before_logger = _os.path.getsize(_LOG_FILE) if _os.path.exists(_LOG_FILE) else 0
+    _via_logger.info("admin/logs via-logger test")
+    _size_after_logger = _os.path.getsize(_LOG_FILE) if _os.path.exists(_LOG_FILE) else 0
+    _logger_grew = _size_after_logger > _size_before_logger
+
+    # Check a real app logger for disabled/propagate state
+    _app_logger = _lg2.getLogger("app.main")
+    _app_logger_info = (
+        f"disabled={_app_logger.disabled} propagate={_app_logger.propagate} "
+        f"level={_lg2.getLevelName(_app_logger.level)} handlers={[type(h).__name__ for h in _app_logger.handlers]}"
+    )
 
     _raw_sample = ""
     try:
@@ -652,7 +669,10 @@ async def admin_logs(level: str = Query(default=""), logger: str = Query(default
         f"root logger level: {root_level}\n"
         f"root handlers: {handler_names}\n"
         f"log file: {_LOG_FILE}\n"
-        f"size before emit test: {_size_before} | size after: {_size_after} | grew: {_emit_grew}\n"
+        f"[direct emit] size before: {_size_before} | after: {_size_after} | grew: {_emit_grew}\n"
+        f"[via logger]  size before: {_size_before_logger} | after: {_size_after_logger} | grew: {_logger_grew}\n"
+        f"admin.via_logger: disabled={_via_logger_disabled} propagate={_via_logger_propagate} level={_via_logger_level}\n"
+        f"app.main logger: {_app_logger_info}\n"
         f"raw first line: {_raw_sample or '(empty)'}\n"
         f"--- emit() exception ---\n{_emit_exc or '(none)'}\n"
         f"--- emit() stderr (handleError output) ---\n{_captured_stderr or '(none)'}"
