@@ -476,6 +476,9 @@ async def nvr_cameras_partial(
     )
 
 
+_ui_logger = __import__("logging").getLogger("ui.sync")
+
+
 @ui_router.get("/ui/nvrs/{nvr_id}/cameras/sync", response_class=HTMLResponse)
 async def nvr_cameras_sync_partial(
     nvr_id: uuid.UUID,
@@ -483,7 +486,9 @@ async def nvr_cameras_sync_partial(
     request: Request = None,
     db: AsyncSession = Depends(get_db),
 ):
+    _ui_logger.warning("Sync triggered for nvr_id=%s", nvr_id)
     sync_result = await sync_cameras_from_nvr(nvr_id, db)
+    _ui_logger.warning("Sync result: %s", sync_result)
     nvr = await db.get(NVRDevice, nvr_id)
     cam_result = await db.execute(select(Camera).where(Camera.nvr_id == nvr_id))
     cameras = cam_result.scalars().all()
@@ -542,7 +547,9 @@ async def nvr_detail_sync_partial(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
+    _ui_logger.warning("Detail sync triggered for nvr_id=%s", nvr_id)
     sync_result = await sync_cameras_from_nvr(nvr_id, db)
+    _ui_logger.warning("Detail sync result: %s", sync_result)
     nvr = await db.get(NVRDevice, nvr_id)
     cam_result = await db.execute(select(Camera).where(Camera.nvr_id == nvr_id))
     cameras = cam_result.scalars().all()
