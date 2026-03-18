@@ -584,29 +584,39 @@ async def admin_logs(level: str = Query(default=""), logger: str = Query(default
     root_level = _logging.getLevelName(root.level)
     memory_in_root = memory_handler in root.handlers
 
+    import io as _io
     import os as _os
+    import sys as _sys
+    import time as _time
+    import traceback as _tb
+    import logging as _lg2
     from app.core.logging import LOG_FILE as _LOG_FILE
-    _log_exists = _os.path.exists(_LOG_FILE)
-    _log_size = _os.path.getsize(_LOG_FILE) if _log_exists else 0
+
+    # Force-emit a real test record and capture any exception + stderr output
+    _size_before = _os.path.getsize(_LOG_FILE) if _os.path.exists(_LOG_FILE) else 0
+    _test_rec = _lg2.LogRecord(
+        name="admin.diagnostic", level=_lg2.INFO, pathname="", lineno=0,
+        msg="admin/logs diagnostic emit", args=(), exc_info=None,
+    )
+    _old_stderr = _sys.stderr
+    _sys.stderr = _captured_err = _io.StringIO()
+    _emit_exc = ""
+    try:
+        memory_handler.emit(_test_rec)
+    except Exception:
+        _emit_exc = _tb.format_exc()
+    finally:
+        _sys.stderr = _old_stderr
+    _captured_stderr = _captured_err.getvalue()
+    _size_after = _os.path.getsize(_LOG_FILE) if _os.path.exists(_LOG_FILE) else 0
+    _emit_grew = _size_after > _size_before
+
     _raw_sample = ""
-    _emit_error = ""
-    if _log_exists:
-        try:
-            with open(_LOG_FILE) as _f:
-                _raw_sample = _f.readline().strip()[:200]
-        except Exception as _e:
-            _raw_sample = f"read error: {_e}"
-    else:
-        # Try writing a test record to see if emit works
-        import logging as _lg
-        _test_rec = _lg.makeLogRecord({"level": _lg.INFO, "levelname": "INFO", "name": "admin.test",
-                                       "msg": "log page diagnostic write", "exc_info": None})
-        _test_rec.created = __import__("time").time()
-        try:
-            memory_handler.emit(_test_rec)
-            _emit_error = "emit() called — check if file appeared"
-        except Exception as _e:
-            _emit_error = f"emit() raised: {_e}"
+    try:
+        with open(_LOG_FILE) as _f:
+            _raw_sample = _f.readline().strip()[:300]
+    except Exception as _e:
+        _raw_sample = f"read error: {_e}"
 
     records = read_log_records()
     if level:
@@ -637,14 +647,15 @@ async def admin_logs(level: str = Query(default=""), logger: str = Query(default
 
     table = "\n".join(rows) if rows else "<tr><td colspan='5'><em>No records.</em></td></tr>"
     debug_info = (
-        f"<pre style='background:#f4f4f4;padding:0.5rem;font-size:0.8em'>"
+        f"<pre style='background:#f4f4f4;padding:0.5rem;font-size:0.8em;white-space:pre-wrap'>"
         f"file_handler in root.handlers: {memory_in_root}\n"
         f"root logger level: {root_level}\n"
         f"root handlers: {handler_names}\n"
         f"log file: {_LOG_FILE}\n"
-        f"log file exists: {_log_exists} | size: {_log_size} bytes\n"
+        f"size before emit test: {_size_before} | size after: {_size_after} | grew: {_emit_grew}\n"
         f"raw first line: {_raw_sample or '(empty)'}\n"
-        f"emit test: {_emit_error or 'n/a (file already exists)'}"
+        f"--- emit() exception ---\n{_emit_exc or '(none)'}\n"
+        f"--- emit() stderr (handleError output) ---\n{_captured_stderr or '(none)'}"
         f"</pre>"
     )
     html = f"""<!DOCTYPE html>
