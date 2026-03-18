@@ -5,9 +5,19 @@
             hx-get="/ui/nvrs/{{ nvr.id }}/cameras/sync"
             hx-target="#nvr-section-{{ nvr.id }}"
             hx-swap="outerHTML"
+            hx-indicator="#sync-spinner-{{ nvr.id }}"
             hx-vals='js:{"selected": [...document.querySelectorAll("input[name=camera_ids]:checked")].map(e=>e.value).join(",")}'
             style="margin-left: 0.5rem;">Sync</button>
+    <span id="sync-spinner-{{ nvr.id }}" class="htmx-indicator" style="margin-left: 0.4rem;">⟳</span>
   </h4>
+
+  {% if sync_result is defined %}
+    {% if sync_result.success %}
+      <p style="color: green; margin: 0.25rem 0;"><small>Synced {{ sync_result.count }} camera{{ 's' if sync_result.count != 1 else '' }}.</small></p>
+    {% else %}
+      <p style="color: red; margin: 0.25rem 0;"><small>Sync failed: {{ sync_result.error }}</small></p>
+    {% endif %}
+  {% endif %}
 
   {% if cameras %}
     <fieldset>

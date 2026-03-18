@@ -55,9 +55,9 @@ async def _create_nvr(client, loc_id: str) -> str:
 async def test_sync_creates_cameras(client, monkeypatch):
     """GET /api/nvrs/{id}/cameras/sync returns 200, success=true, 2 cameras."""
     from tests.mocks import MockISAPIClient
-    import app.cameras.routes as cam_routes
+    import app.cameras.service as cam_service
 
-    monkeypatch.setattr(cam_routes, "ISAPIClient", lambda *args, **kwargs: MockISAPIClient())
+    monkeypatch.setattr(cam_service, "ISAPIClient", lambda *args, **kwargs: MockISAPIClient())
 
     loc_id = await _create_location(client)
     nvr_id = await _create_nvr(client, loc_id)
@@ -74,9 +74,9 @@ async def test_sync_creates_cameras(client, monkeypatch):
 async def test_sync_upsert_no_duplicates(client, db_session, monkeypatch):
     """Calling sync twice produces exactly 2 camera records in DB (upsert idempotency)."""
     from tests.mocks import MockISAPIClient
-    import app.cameras.routes as cam_routes
+    import app.cameras.service as cam_service
 
-    monkeypatch.setattr(cam_routes, "ISAPIClient", lambda *args, **kwargs: MockISAPIClient())
+    monkeypatch.setattr(cam_service, "ISAPIClient", lambda *args, **kwargs: MockISAPIClient())
 
     loc_id = await _create_location(client)
     nvr_id = await _create_nvr(client, loc_id)
@@ -96,7 +96,7 @@ async def test_sync_upsert_no_duplicates(client, db_session, monkeypatch):
 @pytest.mark.asyncio
 async def test_sync_updates_existing_name(client, db_session, monkeypatch):
     """Second sync with updated name overwrites the camera name in DB."""
-    import app.cameras.routes as cam_routes
+    import app.cameras.service as cam_service
 
     call_count = 0
 
@@ -109,7 +109,7 @@ async def test_sync_updates_existing_name(client, db_session, monkeypatch):
             else:
                 return [{"channel_no": 1, "name": "Camera 1 Updated"}, {"channel_no": 2, "name": "Camera 2"}]
 
-    monkeypatch.setattr(cam_routes, "ISAPIClient", lambda *args, **kwargs: UpdatingMockISAPIClient())
+    monkeypatch.setattr(cam_service, "ISAPIClient", lambda *args, **kwargs: UpdatingMockISAPIClient())
 
     loc_id = await _create_location(client)
     nvr_id = await _create_nvr(client, loc_id)
@@ -132,9 +132,9 @@ async def test_sync_updates_existing_name(client, db_session, monkeypatch):
 async def test_sync_updates_last_seen_at(client, db_session, monkeypatch):
     """After successful sync, NVR last_seen_at is set and status='online'."""
     from tests.mocks import MockISAPIClient
-    import app.cameras.routes as cam_routes
+    import app.cameras.service as cam_service
 
-    monkeypatch.setattr(cam_routes, "ISAPIClient", lambda *args, **kwargs: MockISAPIClient())
+    monkeypatch.setattr(cam_service, "ISAPIClient", lambda *args, **kwargs: MockISAPIClient())
 
     loc_id = await _create_location(client)
     nvr_id = await _create_nvr(client, loc_id)
@@ -163,13 +163,13 @@ async def test_sync_unknown_nvr(client):
 @pytest.mark.asyncio
 async def test_sync_isapi_failure(client, monkeypatch):
     """ISAPI exception returns 200, success=false, no 500 error."""
-    import app.cameras.routes as cam_routes
+    import app.cameras.service as cam_service
 
     class FailingISAPIClient:
         async def get_camera_channels(self):
             raise httpx.ConnectError("Connection refused")
 
-    monkeypatch.setattr(cam_routes, "ISAPIClient", lambda *args, **kwargs: FailingISAPIClient())
+    monkeypatch.setattr(cam_service, "ISAPIClient", lambda *args, **kwargs: FailingISAPIClient())
 
     loc_id = await _create_location(client)
     nvr_id = await _create_nvr(client, loc_id)

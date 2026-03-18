@@ -36,6 +36,7 @@ from sqlalchemy import delete as sql_delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.cameras.models import Camera
+from app.cameras.service import sync_cameras_from_nvr
 from app.core.config import settings
 from app.core.database import get_db
 from app.locations.models import Location
@@ -481,18 +482,20 @@ async def nvr_cameras_sync_partial(
     request: Request = None,
     db: AsyncSession = Depends(get_db),
 ):
-    async with httpx.AsyncClient() as client:
-        try:
-            await client.get(f"{settings.BASE_URL}/api/nvrs/{nvr_id}/cameras/sync", timeout=15.0)
-        except Exception:
-            pass  # Best-effort sync; fall through to DB query
+    sync_result = await sync_cameras_from_nvr(nvr_id, db)
     nvr = await db.get(NVRDevice, nvr_id)
     cam_result = await db.execute(select(Camera).where(Camera.nvr_id == nvr_id))
     cameras = cam_result.scalars().all()
     selected_ids = {uuid.UUID(s) for s in selected.split(",") if s}
     return templates.TemplateResponse(
         "partials/nvr_camera_section.html",
-        {"request": request, "nvr": nvr, "cameras": cameras, "selected_camera_ids": selected_ids},
+        {
+            "request": request,
+            "nvr": nvr,
+            "cameras": cameras,
+            "selected_camera_ids": selected_ids,
+            "sync_result": sync_result,
+        },
     )
 
 
