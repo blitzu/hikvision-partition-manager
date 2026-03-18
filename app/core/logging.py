@@ -71,7 +71,7 @@ class FileLogHandler(logging.Handler):
             with open(LOG_FILE, "a") as f:
                 f.write(json.dumps(entry) + "\n")
         except Exception:
-            pass
+            self.handleError(record)
 
 
 # Keep memory_handler name for backwards compat with imports
