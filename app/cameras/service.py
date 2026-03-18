@@ -47,6 +47,7 @@ async def sync_cameras_from_nvr(
                 "nvr_name": nvr.name,
                 "status_code": exc.response.status_code,
                 "url": str(exc.request.url),
+                "response_body": exc.response.text[:500],
             },
         )
         nvr.status = "offline"
